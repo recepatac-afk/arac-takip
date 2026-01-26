@@ -30,6 +30,11 @@
     <!-- EmailJS -->
     <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
 
+    <!-- OCR & PDF -->
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script>window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';</script>
+
     <style>
         /* --- DESIGN SYSTEM & GLASSMORPHISM --- */
         :root {
@@ -390,12 +395,18 @@
                 const icons = {
                     car: <path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9l-1.4 2.9A3.7 3.7 0 0 0 2 12v4c0 .6.4 1 1 1h2" />,
                     plus: <path d="M12 5v14M5 12h14" />,
-                    settings: <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.1a2 2 0 0 1-1-1.72v-.51a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" />,
+                    settings: <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.1a2 2 0 0 1-1-1.72v-.51a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" />,
                     creditCard: <rect width="20" height="14" x="2" y="5" rx="2" />,
                     calendar: <rect width="18" height="18" x="3" y="4" rx="2" ry="2" />,
                     x: <path d="M18 6 6 18M6 6l12 12" />,
                     trash: <path d="M3 6h18M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />,
-                    download: <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3" />
+                    download: <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3" />,
+                    camera: <><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" /><circle cx="12" cy="13" r="4" /></>,
+                    file: <><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z" /><polyline points="14 2 14 8 20 8" /></>,
+                    image: <><rect x="3" y="3" width="18" height="18" rx="2" ry="2" /><circle cx="8.5" cy="8.5" r="1.5" /><polyline points="21 15 16 10 5 21" /></>,
+                    edit: <><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" /><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" /></>,
+                    eye: <><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" /><circle cx="12" cy="12" r="3" /></>,
+                    minus: <line x1="5" y1="12" x2="19" y2="12" />
                 };
                 return (
                     <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -409,9 +420,31 @@
             };
 
             // --- UTILS ---
+            // --- UTILS ---
             const generateId = () => Math.random().toString(36).substr(2, 9);
             const formatCurrency = (amount) => new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY' }).format(amount);
             const formatDate = (dateStr) => new Date(dateStr).toLocaleDateString('tr-TR');
+            const resizeImage = (base64Str, maxWidth = 800, maxHeight = 600) => {
+                return new Promise((resolve) => {
+                    const img = new Image();
+                    img.src = base64Str;
+                    img.onload = () => {
+                        const canvas = document.createElement('canvas');
+                        let width = img.width;
+                        let height = img.height;
+                        if (width > height) {
+                            if (width > maxWidth) { height *= maxWidth / width; width = maxWidth; }
+                        } else {
+                            if (height > maxHeight) { width *= maxHeight / height; height = maxHeight; }
+                        }
+                        canvas.width = width;
+                        canvas.height = height;
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0, width, height);
+                        resolve(canvas.toDataURL('image/jpeg', 0.8));
+                    };
+                });
+            };
 
             // --- INITIAL DATA ---
             const initialVehicles = [
@@ -438,46 +471,146 @@
             const App = () => {
                 console.log("Rendering App...");
                 const [loading, setLoading] = useState(true);
+                const [isDataLoaded, setIsDataLoaded] = useState(false);
                 const [vehicles, setVehicles] = useState([]);
                 const [expenses, setExpenses] = useState([]);
                 const [appointments, setAppointments] = useState([]);
+                const [documents, setDocuments] = useState([]);
                 const [settings, setSettings] = useState(initialSettings);
 
                 // Modal States
-                const [activeModal, setActiveModal] = useState(null);
+                const [activeModal, setActiveModal] = useState(null); // 'vehicle', 'editVehicle', ...
                 const [selectedVehicleId, setSelectedVehicleId] = useState(null);
+                const [editingVehicle, setEditingVehicle] = useState(null);
+                const [editingExpense, setEditingExpense] = useState(null);
+                const [isViewMode, setIsViewMode] = useState(false);
+                const [viewingDocument, setViewingDocument] = useState(null);
+                const [viewingExpenseDetails, setViewingExpenseDetails] = useState(null);
+                const [menuOpenId, setMenuOpenId] = useState(null);
 
-                // API URL
-                const API_URL = "http://localhost:8070/api/data";
+                // ... (state definitions)
 
-                // Fetch Data on Mount
+                // ... (effects)
+
+
+
+                const API_URL = 'http://localhost:8070/api/data';
+
+                // Load Data
                 useEffect(() => {
-                    fetch(API_URL)
-                        .then(res => res.json())
-                        .then(data => {
-                            if (data.vehicles) setVehicles(data.vehicles);
-                            if (data.expenses) setExpenses(data.expenses);
-                            if (data.appointments) setAppointments(data.appointments);
-                            if (data.settings) setSettings(data.settings);
-                            setLoading(false);
-                        })
-                        .catch(err => {
-                            console.error("Failed to fetch data:", err);
-                            setLoading(false);
-                        });
+                    const loadData = async () => {
+                        let backendData = null;
+                        let localData = null;
+
+                        // 1. Fetch Backend Data
+                        try {
+                            const response = await fetch(API_URL);
+                            if (response.ok) {
+                                backendData = await response.json();
+                                console.log("Backend data fetched.");
+                            }
+                        } catch (err) {
+                            console.warn("Backend unavailable:", err);
+                        }
+
+                        // 2. Fetch LocalStorage Data
+                        const saved = localStorage.getItem('vehicleApp_data');
+                        if (saved) {
+                            try {
+                                localData = JSON.parse(saved);
+                                console.log("LocalStorage data found.");
+                            } catch (e) {
+                                console.error("Local Storage Parse Error:", e);
+                            }
+                        }
+
+                        // 3. Decide which data to use (Smart Sync)
+                        let finalData = null;
+                        let sourceSource = "";
+
+                        if (backendData && !localData) {
+                            finalData = backendData;
+                            sourceSource = "Backend";
+                        } else if (!backendData && localData) {
+                            finalData = localData;
+                            sourceSource = "LocalStorage";
+                        } else if (backendData && localData) {
+                            // Conflict Resolution: Check Timestamps
+                            const backendTime = new Date(backendData.updatedAt || 0).getTime();
+                            const localTime = new Date(localData.updatedAt || 0).getTime();
+
+                            // Use a buffer of 1 second to avoid minor drifts, but generally prefer newer
+                            // If Local is clearly newer (> 5000ms), use it.
+                            // If Backend is empty (default data) but Local has real data, use Local.
+                            const isBackendDefault = (backendData.vehicles || []).length <= 2 && (backendData.expenses || []).length === 0;
+                            const isLocalReal = (localData.vehicles || []).length > 2 || (localData.expenses || []).length > 0;
+
+                            if (isBackendDefault && isLocalReal) {
+                                console.warn("Backend seems empty/default, preferring LocalStorage.");
+                                finalData = localData;
+                                sourceSource = "LocalStorage (Backend Empty)";
+                            } else if (localTime > backendTime + 1000) {
+                                console.warn(`Local data is newer (${new Date(localTime).toLocaleTimeString()} vs ${new Date(backendTime).toLocaleTimeString()}). Using LocalStorage.`);
+                                finalData = localData;
+                                sourceSource = "LocalStorage (Newer)";
+                                // Ideally, we should autosave this to backend immediately
+                            } else {
+                                console.log("Backend data is newer or same. Using Backend.");
+                                finalData = backendData;
+                                sourceSource = "Backend";
+                            }
+                        } else {
+                            // Both null
+                            console.log("No data found, using initials.");
+                        }
+
+                        // 4. Set State
+                        if (finalData) {
+                            setVehicles(finalData.vehicles || []);
+                            setExpenses(finalData.expenses || []);
+                            setAppointments(finalData.appointments || []);
+                            setSettings(finalData.settings || initialSettings);
+                            setDocuments(finalData.documents || []);
+                            if (sourceSource.includes("LocalStorage")) {
+                                // Show a notification or just info
+                                console.log("Restored from LocalStorage");
+                            }
+                        } else {
+                            // Initialize new
+                            setVehicles(initialVehicles);
+                            setExpenses(initialExpenses);
+                            setAppointments(initialAppointments);
+                        }
+
+                        setIsDataLoaded(true);
+                        setLoading(false);
+                    };
+                    loadData();
                 }, []);
 
-                // Persistence (Save to Backend)
+                // Save Data
                 useEffect(() => {
-                    if (!loading) {
-                        const data = { vehicles, expenses, appointments, settings };
+                    if (isDataLoaded) {
+                        const data = {
+                            vehicles,
+                            expenses,
+                            appointments,
+                            settings,
+                            documents,
+                            updatedAt: new Date().toISOString() // Add timestamp for conflict resolution
+                        };
+
+                        // Save to LocalStorage (Always backup)
+                        localStorage.setItem('vehicleApp_data', JSON.stringify(data));
+
+                        // Save to Backend
                         fetch(API_URL, {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify(data)
-                        }).catch(err => console.error("Failed to save data:", err));
+                        }).catch(err => console.warn("Failed to save to backend:", err));
                     }
-                }, [vehicles, expenses, appointments, settings, loading]);
+                }, [vehicles, expenses, appointments, settings, documents, isDataLoaded]);
 
                 // EmailJS Init
                 useEffect(() => {
@@ -492,9 +625,21 @@
                     setActiveModal(null);
                 };
 
+                const updateVehicle = (vehicle) => {
+                    setVehicles(vehicles.map(v => v.id === vehicle.id ? { ...v, ...vehicle } : v));
+                    setActiveModal(null);
+                    setEditingVehicle(null);
+                };
+
                 const addExpense = (expense) => {
                     setExpenses([...expenses, { ...expense, id: generateId(), createdAt: new Date().toISOString() }]);
                     setActiveModal(null);
+                };
+
+                const updateExpense = (expense) => {
+                    setExpenses(expenses.map(e => e.id === expense.id ? { ...e, ...expense } : e));
+                    setActiveModal(null);
+                    setEditingExpense(null);
                 };
 
                 const addAppointment = (appointment) => {
@@ -512,17 +657,109 @@
                         setVehicles(vehicles.filter(v => v.id !== id));
                         setExpenses(expenses.filter(e => e.vehicleId !== id));
                         setAppointments(appointments.filter(a => a.vehicleId !== id));
+                        setDocuments(documents.filter(d => d.vehicleId !== id));
+                    }
+                };
+
+                const deleteExpense = (id) => {
+                    if (confirm('Harcamayı silmek istediğinize emin misiniz?')) {
+                        setExpenses(expenses.filter(e => e.id !== id));
+                    }
+                };
+
+                const deleteAppointment = (id) => {
+                    if (confirm('Randevuyu silmek istediğinize emin misiniz?')) {
+                        setAppointments(appointments.filter(a => a.id !== id));
+                    }
+                };
+
+                const forceReload = () => {
+                    const saved = localStorage.getItem('vehicleApp_data');
+                    if (saved) {
+                        alert("LocalStorage Verisi Bulundu! Boyut: " + saved.length);
+                        const parsed = JSON.parse(saved);
+                        setVehicles(parsed.vehicles || []);
+                        setExpenses(parsed.expenses || []);
+                        setAppointments(parsed.appointments || []);
+                        setSettings(parsed.settings || initialSettings);
+                        setDocuments(parsed.documents || []);
+                    } else {
+                        alert("LocalStorage Boş veya Silinmiş.");
                     }
                 };
 
                 const exportData = () => {
-                    const data = { vehicles, expenses, appointments, settings };
+                    const data = { vehicles, expenses, appointments, settings, documents };
                     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
                     const url = URL.createObjectURL(blob);
                     const a = document.createElement('a');
                     a.href = url;
                     a.download = `arac_takip_backup_${new Date().toISOString().split('T')[0]}.json`;
                     a.click();
+                };
+
+                const importData = (e) => {
+                    const file = e.target.files[0];
+                    if (!file) return;
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        try {
+                            const parsed = JSON.parse(e.target.result);
+                            if (confirm('Mevcut verilerin üzerine yazılacak. Emin misiniz?')) {
+                                setVehicles(parsed.vehicles || []);
+                                setExpenses(parsed.expenses || []);
+                                setAppointments(parsed.appointments || []);
+                                setSettings(parsed.settings || initialSettings);
+                                setDocuments(parsed.documents || []);
+                                alert("Veriler başarıyla yüklendi!");
+                                setActiveModal(null);
+                            }
+                        } catch (err) {
+                            alert("Dosya okunamadı: " + err.message);
+                        }
+                    };
+                    reader.readAsText(file);
+                };
+
+                const handleFileUpload = async (vehicleId, file) => {
+                    if (!file) return;
+                    const reader = new FileReader();
+                    reader.onload = async (e) => {
+                        let content = e.target.result;
+                        const type = file.type.startsWith('image/') ? 'IMAGE' : 'DOC';
+                        // Resize if image
+                        if (type === 'IMAGE') {
+                            content = await resizeImage(content);
+                        }
+                        const newDoc = {
+                            id: generateId(),
+                            vehicleId,
+                            type,
+                            data: content,
+                            name: file.name,
+                            date: new Date().toISOString()
+                        };
+                        setDocuments(prev => [...prev, newDoc]);
+                        setMenuOpenId(null);
+                    };
+                    reader.readAsDataURL(file);
+                };
+
+                const handleWebcamCapture = (vehicleId, dataUrl) => {
+                    // resize handled by webcam capture usually, but double check
+                    resizeImage(dataUrl).then(resized => {
+                        const newDoc = {
+                            id: generateId(),
+                            vehicleId,
+                            type: 'IMAGE',
+                            data: resized,
+                            name: 'Kamera_' + new Date().toLocaleTimeString(),
+                            date: new Date().toISOString()
+                        };
+                        setDocuments(prev => [...prev, newDoc]);
+                        setMenuOpenId(null);
+                        setActiveModal(null);
+                    });
                 };
 
                 // Derivations
@@ -552,12 +789,33 @@
                     return result.length > 0 ? result : [{ name: 'Yok', value: 1 }];
                 }, [expenses, vehicles]);
 
+                const upcomingAppointmentsList = useMemo(() => {
+                    const now = new Date();
+                    now.setHours(0, 0, 0, 0);
+                    const oneMonthLater = new Date(now);
+                    oneMonthLater.setDate(oneMonthLater.getDate() + 30);
+
+                    return appointments
+                        .filter(a => {
+                            const d = new Date(a.tarih);
+                            return d >= now && d <= oneMonthLater;
+                        })
+                        .sort((a, b) => new Date(a.tarih) - new Date(b.tarih))
+                        .map(a => {
+                            const v = vehicles.find(v => v.id === a.vehicleId);
+                            return { ...a, plaka: v ? v.plaka : 'Bilinmeyen Araç' };
+                        });
+                }, [appointments, vehicles]);
+
                 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8'];
                 const VEHICLE_COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4', '#eab308'];
 
                 // --- RENDERERS ---
                 return (
+
                     <div className="app-container">
+                        <MigrationBanner onExport={exportData} onRecover={forceReload} />
+
                         {/* TOP BAR */}
                         <div className="top-bar glass-panel">
                             <div className="brand flex items-center gap-2">
@@ -565,6 +823,7 @@
                                 <span>FiloTakip Pro</span>
                             </div>
                             <div style={{ display: 'flex', gap: '10px' }}>
+                                <button className="btn btn-secondary" onClick={() => setActiveModal('reports')}><Icon name="chart" /> Raporlar</button>
                                 <button className="btn btn-primary" onClick={() => setActiveModal('vehicle')}><Icon name="plus" /> Araç Ekle</button>
                                 <button className="btn btn-primary" onClick={() => setActiveModal('expense')}><Icon name="creditCard" /> Harcama Ekle</button>
                                 <button className="btn btn-secondary" onClick={() => setActiveModal('settings')}><Icon name="settings" /></button>
@@ -581,7 +840,11 @@
                                 <span className="stat-label">Bu Ay Harcama</span>
                                 <span className="stat-value" style={{ color: '#ef4444' }}>{formatCurrency(totalExpensesThisMonth)}</span>
                             </div>
-                            <div className="glass-panel stat-card">
+                            <div className="glass-panel stat-card"
+                                onClick={() => setActiveModal('allAppointments')}
+                                style={{ cursor: 'pointer' }}
+                                title="Tüm yaklaşan randevuları görmek için tıkla"
+                            >
                                 <span className="stat-label">Yaklaşan Randevu</span>
                                 <span className="stat-value" style={{ color: '#fbbf24' }}>{upcomingAppointmentsCount}</span>
                             </div>
@@ -589,17 +852,25 @@
 
                         {/* CHARTS */}
                         <div className="charts-section">
-                            <div className="glass-panel chart-container">
-                                <h3 style={{ marginBottom: '20px', color: 'var(--text-muted)' }}>Harcama Trendi</h3>
-                                <ResponsiveContainer width="100%" height="100%">
-                                    <LineChart data={chartData}>
-                                        <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
-                                        <XAxis dataKey="name" stroke="#94a3b8" />
-                                        <YAxis stroke="#94a3b8" />
-                                        <Tooltip contentStyle={{ backgroundColor: '#1e293b', borderColor: '#334155' }} />
-                                        <Line type="monotone" dataKey="tutar" stroke="#3b82f6" strokeWidth={3} dot={{ r: 4 }} />
-                                    </LineChart>
-                                </ResponsiveContainer>
+                            <div id="appointments-list" className="glass-panel chart-container" style={{ overflowY: 'auto' }}>
+                                <h3 style={{ marginBottom: '20px', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                    <Icon name="calendar" /> Yaklaşan Randevular (30 Gün)
+                                </h3>
+                                {upcomingAppointmentsList.length === 0 ? (
+                                    <div className="text-muted text-center" style={{ marginTop: '50px' }}>Yaklaşan randevu bulunmuyor.</div>
+                                ) : (
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                                        {upcomingAppointmentsList.map(a => (
+                                            <div key={a.id} className="list-item" style={{ borderLeft: '3px solid var(--primary)' }}>
+                                                <div>
+                                                    <div style={{ fontWeight: 'bold', fontSize: '1.1rem' }}>{formatDate(a.tarih)} <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{a.saat}</span></div>
+                                                    <div style={{ color: 'white' }}>{a.plaka}</div>
+                                                    <div style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>{a.aciklama}</div>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
                             </div>
                             <div className="glass-panel chart-container">
                                 <h3 style={{ marginBottom: '20px', color: 'var(--text-muted)' }}>Araç Bazlı Dağılım</h3>
@@ -625,23 +896,67 @@
                                 const vExpenses = expenses.filter(e => e.vehicleId === v.id);
                                 const thisMonthExp = vExpenses.filter(e => new Date(e.tarih).getMonth() === new Date().getMonth()).reduce((a, c) => a + Number(c.tutar), 0);
                                 return (
-                                    <div key={v.id} className="glass-panel vehicle-card" style={{ background: `linear-gradient(145deg, ${color}10, rgba(30, 41, 59, 0.4))` }}>
+                                    <div key={v.id} className="glass-panel vehicle-card"
+                                        style={{ background: `linear-gradient(145deg, ${color}10, rgba(30, 41, 59, 0.4))`, cursor: 'pointer' }}
+                                        onClick={() => { setSelectedVehicleId(v.id); setActiveModal('vehicleDetail'); }}
+                                    >
                                         <div style={{ position: 'absolute', top: 0, left: 0, width: '4px', height: '100%', background: color }}></div>
-
-
 
                                         <div className="vehicle-header">
                                             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                                                 <div className="plate" style={{ borderColor: color }}>{v.plaka}</div>
-                                                {v.driver && <span style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>| {v.driver}</span>}
+                                                {v.driver && <span style={{ color: 'white', fontSize: '1.1rem', fontWeight: 'bold' }}>| {v.driver}</span>}
                                             </div>
-                                            <img
-                                                src={`https://tse1.mm.bing.net/th?q=${encodeURIComponent(v.marka + ' ' + v.model + ' ' + (v.renk || ''))}&w=400&h=300&c=7&rs=1&p=0`}
-                                                alt="car"
-                                                style={{ width: '200px', height: '150px', objectFit: 'cover', borderRadius: '4px', marginLeft: 'auto', marginRight: '10px' }}
-                                                onError={(e) => { e.target.style.display = 'none'; }}
-                                            />
-                                            <button className="btn btn-secondary" style={{ padding: '5px' }} onClick={() => deleteVehicle(v.id)}><Icon name="trash" size={14} /></button>
+
+                                            {/* Vehicle Image */}
+                                            {(() => {
+                                                const vehicleImg = documents.filter(d => d.vehicleId === v.id && d.type === 'IMAGE').sort((a, b) => new Date(b.date) - new Date(a.date))[0];
+                                                const imgSrc = vehicleImg ? vehicleImg.data : `https://tse1.mm.bing.net/th?q=${encodeURIComponent(v.marka + ' ' + v.model + ' ' + (v.renk || ''))}&w=400&h=300&c=7&rs=1&p=0`;
+                                                return (
+                                                    <label onClick={(e) => e.stopPropagation()} style={{ cursor: 'pointer', position: 'relative', display: 'block' }} title="Fotoğrafı Değiştirmek İçin Tıkla">
+                                                        <input type="file" accept="image/*" hidden onChange={(e) => handleFileUpload(v.id, e.target.files[0])} />
+                                                        <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: 0, transition: 'opacity 0.2s', borderRadius: '4px', color: 'white', fontWeight: 'bold' }}
+                                                            onMouseEnter={(e) => e.currentTarget.style.opacity = 1}
+                                                            onMouseLeave={(e) => e.currentTarget.style.opacity = 0}>
+                                                            <Icon name="camera" />
+                                                        </div>
+                                                        <img
+                                                            src={imgSrc}
+                                                            alt="car"
+                                                            style={{ width: '200px', height: '150px', objectFit: 'cover', borderRadius: '4px', marginLeft: 'auto', marginRight: '10px' }}
+                                                            onError={(e) => { e.target.style.display = 'none'; }}
+                                                        />
+                                                    </label>
+                                                );
+                                            })()}
+
+                                            {/* Actions */}
+                                            <div style={{ display: 'flex', gap: '5px', position: 'relative' }}>
+                                                <button className="btn btn-secondary" style={{ padding: '5px' }} onClick={(e) => { e.stopPropagation(); setEditingVehicle(v); setActiveModal('editVehicle'); }}>
+                                                    <Icon name="edit" size={14} />
+                                                </button>
+                                                <button className="btn btn-secondary" style={{ padding: '5px' }} onClick={(e) => { e.stopPropagation(); setMenuOpenId(menuOpenId === v.id ? null : v.id); }}>
+                                                    <Icon name="plus" size={14} />
+                                                </button>
+                                                <button className="btn btn-secondary" style={{ padding: '5px' }} onClick={() => deleteVehicle(v.id)}><Icon name="trash" size={14} /></button>
+
+                                                {/* Dropdown Menu */}
+                                                {menuOpenId === v.id && (
+                                                    <div style={{ position: 'absolute', top: '100%', right: 0, background: '#1e293b', border: '1px solid var(--glass-border)', borderRadius: '8px', zIndex: 10, padding: '5px', width: '150px' }}>
+                                                        <label style={{ display: 'block', padding: '8px', cursor: 'pointer', color: 'white' }}>
+                                                            <Icon name="image" size={14} /> Fotoğraf Ekle
+                                                            <input type="file" accept="image/*" hidden onChange={(e) => handleFileUpload(v.id, e.target.files[0])} />
+                                                        </label>
+                                                        <div style={{ display: 'block', padding: '8px', cursor: 'pointer', color: 'white' }} onClick={() => { setSelectedVehicleId(v.id); setActiveModal('webcam'); setMenuOpenId(null); }}>
+                                                            <Icon name="camera" size={14} /> Fotoğraf Çek
+                                                        </div>
+                                                        <label style={{ display: 'block', padding: '8px', cursor: 'pointer', color: 'white' }}>
+                                                            <Icon name="file" size={14} /> Belge Ekle
+                                                            <input type="file" accept=".pdf,.doc,.docx" hidden onChange={(e) => handleFileUpload(v.id, e.target.files[0])} />
+                                                        </label>
+                                                    </div>
+                                                )}
+                                            </div>
                                         </div>
                                         <div style={{ color: 'var(--text-muted)', marginBottom: '15px' }}>{v.yil} Model &bull; {v.renk || 'Renk Yok'}</div>
                                         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '15px', background: 'rgba(255,255,255,0.05)', padding: '10px', borderRadius: '8px', borderLeft: `2px solid ${color}` }}>
@@ -681,9 +996,40 @@
                             </Modal>
                         )}
 
+                        {activeModal === 'editVehicle' && editingVehicle && (
+                            <Modal title="Araç Düzenle" onClose={() => { setActiveModal(null); setEditingVehicle(null); }}>
+                                <form onSubmit={(e) => { e.preventDefault(); updateVehicle({ ...editingVehicle, ...Object.fromEntries(new FormData(e.target)) }); }}>
+                                    <div className="row">
+                                        <div className="col form-group"><label className="form-label">Plaka</label><input name="plaka" required defaultValue={editingVehicle.plaka} /></div>
+                                        <div className="col form-group"><label className="form-label">Kullanan Kişi</label><input name="driver" defaultValue={editingVehicle.driver} /></div>
+                                    </div>
+                                    <div className="row">
+                                        <div className="col form-group"><label className="form-label">Marka</label><input name="marka" required defaultValue={editingVehicle.marka} /></div>
+                                        <div className="col form-group"><label className="form-label">Model</label><input name="model" required defaultValue={editingVehicle.model} /></div>
+                                    </div>
+                                    <div className="row">
+                                        <div className="col form-group"><label className="form-label">Yıl</label><input name="yil" type="number" required defaultValue={editingVehicle.yil} /></div>
+                                        <div className="col form-group"><label className="form-label">Renk</label><input name="renk" defaultValue={editingVehicle.renk} /></div>
+                                    </div>
+                                    <div className="row" style={{ marginTop: '20px' }}>
+                                        <button type="button" className="btn btn-secondary col" onClick={() => { setActiveModal(null); setEditingVehicle(null); }}>İptal</button>
+                                        <button type="submit" className="btn btn-primary col">Güncelle</button>
+                                    </div>
+                                </form>
+                            </Modal>
+                        )}
+
                         {activeModal === 'expense' && (
-                            <Modal title="Harcama Ekle" onClose={() => setActiveModal(null)}>
-                                <ExpenseForm vehicles={vehicles} onSubmit={addExpense} onCancel={() => setActiveModal(null)} initialVehicleId={selectedVehicleId} />
+                            <Modal title={isViewMode ? "Harcama Detayı" : (editingExpense ? "Harcama Düzenle" : "Harcama Ekle")} onClose={() => { setActiveModal(null); setEditingExpense(null); setIsViewMode(false); }}>
+                                <ExpenseForm
+                                    key={editingExpense ? editingExpense.id : 'new'}
+                                    vehicles={vehicles}
+                                    onSubmit={editingExpense ? (data) => updateExpense({ ...data, id: editingExpense.id }) : addExpense}
+                                    onCancel={() => { setActiveModal(null); setEditingExpense(null); setIsViewMode(false); }}
+                                    initialVehicleId={selectedVehicleId}
+                                    initialData={editingExpense}
+                                    readOnly={isViewMode}
+                                />
                             </Modal>
                         )}
 
@@ -706,8 +1052,48 @@
                                     <label>Browser Bildirimleri</label>
                                 </div>
                                 <hr style={{ borderColor: 'var(--glass-border)', margin: '20px 0' }} />
-                                <button className="btn btn-secondary" style={{ width: '100%' }} onClick={exportData}><Icon name="download" /> Veri Dışa Aktar (JSON)</button>
+                                <div style={{ display: 'flex', gap: '10px' }}>
+                                    <button className="btn btn-secondary" style={{ flex: 1 }} onClick={exportData}><Icon name="download" /> Veri İndir (Yedek)</button>
+                                    <label className="btn btn-primary" style={{ flex: 1, cursor: 'pointer', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '5px' }}>
+                                        <Icon name="file" /> Veri Yükle (Geri Getir)
+                                        <input type="file" accept=".json" hidden onChange={importData} />
+                                    </label>
+                                </div>
                             </Modal>
+                        )}
+
+                        {activeModal === 'allAppointments' && (
+                            <Modal title="Tüm Yaklaşan Randevular" onClose={() => setActiveModal(null)}>
+                                <div style={{ maxHeight: '60vh', overflowY: 'auto' }}>
+                                    {appointments
+                                        .filter(a => new Date(a.tarih) >= new Date().setHours(0, 0, 0, 0))
+                                        .sort((a, b) => new Date(a.tarih) - new Date(b.tarih))
+                                        .length === 0 ? (
+                                        <div className="text-center p-4 text-muted">Gelecek randevu bulunmuyor.</div>
+                                    ) : (
+                                        appointments
+                                            .filter(a => new Date(a.tarih) >= new Date().setHours(0, 0, 0, 0))
+                                            .sort((a, b) => new Date(a.tarih) - new Date(b.tarih))
+                                            .map(a => {
+                                                const v = vehicles.find(v => v.id === a.vehicleId);
+                                                return (
+                                                    <div key={a.id} className="list-item">
+                                                        <div style={{ flex: 1 }}>
+                                                            <div style={{ fontWeight: 600 }}>{formatDate(a.tarih)} - {a.saat}</div>
+                                                            <div style={{ color: 'var(--primary)', fontWeight: 'bold' }}>{v ? v.plaka : 'Bilinmeyen Araç'}</div>
+                                                            <div>{a.aciklama}</div>
+                                                        </div>
+                                                        <button className="btn btn-secondary" style={{ padding: '5px', color: '#ef4444', borderColor: '#ef4444' }} onClick={() => deleteAppointment(a.id)}><Icon name="trash" size={14} /></button>
+                                                    </div>
+                                                );
+                                            })
+                                    )}
+                                </div>
+                            </Modal>
+                        )}
+
+                        {activeModal === 'reports' && (
+                            <ReportsModal vehicles={vehicles} expenses={expenses} onClose={() => setActiveModal(null)} />
                         )}
 
                         {activeModal === 'vehicleDetail' && selectedVehicleId && (
@@ -715,9 +1101,46 @@
                                 vehicle={vehicles.find(v => v.id === selectedVehicleId)}
                                 expenses={expenses.filter(e => e.vehicleId === selectedVehicleId)}
                                 appointments={appointments.filter(a => a.vehicleId === selectedVehicleId)}
+                                documents={documents.filter(d => d.vehicleId === selectedVehicleId)}
                                 onClose={() => { setActiveModal(null); setSelectedVehicleId(null); }}
                                 onAddAppointment={(apt) => addAppointment({ ...apt, vehicleId: selectedVehicleId })}
                                 onAddExpense={() => { setActiveModal('expense'); /* keeps selectedVehicleId */ }}
+                                /* Pass new handlers */
+                                onEdit={(v) => { setEditingVehicle(v); setActiveModal('editVehicle'); }}
+                                onDelete={(id) => { deleteVehicle(id); setActiveModal(null); }}
+                                onFileUpload={(file) => handleFileUpload(selectedVehicleId, file)}
+                                onWebcamOpen={() => setActiveModal('webcam')}
+                                onDeleteExpense={deleteExpense}
+                                onDeleteAppointment={deleteAppointment}
+                                onEditExpense={(e) => { setEditingExpense(e); setIsViewMode(false); setActiveModal('expense'); }}
+                                onViewExpense={(e) => {
+                                    if (e.dokuman) {
+                                        setViewingDocument(e.dokuman);
+                                    } else {
+                                        setViewingExpenseDetails(e);
+                                    }
+                                }}
+                            />
+                        )}
+
+                        {activeModal === 'webcam' && (
+                            <WebcamModal
+                                onCapture={(dataUrl) => handleWebcamCapture(selectedVehicleId, dataUrl)}
+                                onClose={() => setActiveModal(null)}
+                            />
+                        )}
+
+                        {viewingDocument && (
+                            <ImageViewerModal
+                                src={viewingDocument}
+                                onClose={() => setViewingDocument(null)}
+                            />
+                        )}
+
+                        {viewingExpenseDetails && (
+                            <ExpenseDetailsModal
+                                expense={viewingExpenseDetails}
+                                onClose={() => setViewingExpenseDetails(null)}
                             />
                         )}
                     </div>
@@ -729,60 +1152,319 @@
             const Modal = ({ title, children, onClose }) => (
                 <div className="modal-overlay" onClick={(e) => e.target === e.currentTarget && onClose()}>
                     <div className="modal-content glass-panel p-6" style={{ padding: '24px' }}>
-                        <div className="flex justify-between items-center mb-4" style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px' }}>
-                            <h2 className="text-xl font-bold" style={{ margin: 0 }}>{title}</h2>
-                            <button onClick={onClose} className="btn btn-secondary" style={{ padding: '5px 10px' }}><Icon name="x" /></button>
+                        <div className="flex justify-between items-center mb-4" style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px', alignItems: 'center' }}>
+                            {typeof title === 'string' ? <h2 className="text-xl font-bold" style={{ margin: 0 }}>{title}</h2> : <div style={{ width: '100%' }}>{title}</div>}
+                            <button type="button" onClick={(e) => { e.stopPropagation(); onClose(); }} className="btn btn-secondary" style={{ padding: '5px 10px', marginLeft: '10px' }}><Icon name="x" /></button>
                         </div>
                         {children}
                     </div>
                 </div>
             );
 
-            const ExpenseForm = ({ vehicles, onSubmit, onCancel, initialVehicleId }) => {
+            const ExpenseForm = ({ vehicles, onSubmit, onCancel, initialVehicleId, initialData, readOnly }) => {
+                const [vehicleId, setVehicleId] = useState(initialVehicleId || (vehicles[0] ? vehicles[0].id : ''));
                 const [type, setType] = useState('YAKIT');
-                const [fileBase64, setFileBase64] = useState(null);
+                const [attachment, setAttachment] = useState(null);
+                const [showCamera, setShowCamera] = useState(false);
+                const [ocrStatus, setOcrStatus] = useState('idle'); // idle, scanning, success, error
+                const videoRef = React.useRef(null);
 
-                const handleFileChange = (e) => {
+                // Form refs for auto-fill
+                const dateRef = React.useRef(null);
+                const amountRef = React.useRef(null);
+
+                // Pre-fill refs if editing
+                useEffect(() => {
+                    if (initialData) {
+                        // Delay slightly to ensure DOM is ready
+                        setTimeout(() => {
+                            if (dateRef.current) dateRef.current.value = initialData.tarih;
+                            if (amountRef.current) amountRef.current.value = initialData.tutar;
+                        }, 0);
+
+                        setVehicleId(initialData.vehicleId);
+                        setType(initialData.kategori);
+                        setAttachment(initialData.dokuman || null);
+                    }
+                }, [initialData]);
+
+                // Camera Logic
+                useEffect(() => {
+                    let stream = null;
+                    if (showCamera) {
+                        navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
+                            .then(s => { stream = s; if (videoRef.current) videoRef.current.srcObject = stream; })
+                            .catch(err => alert("Kamera hatası: " + err.message));
+                    }
+                    return () => { if (stream) stream.getTracks().forEach(t => t.stop()); };
+                }, [showCamera]);
+
+                const capture = () => {
+                    if (!videoRef.current) return;
+                    const canvas = document.createElement('canvas');
+                    canvas.width = videoRef.current.videoWidth;
+                    canvas.height = videoRef.current.videoHeight;
+                    canvas.getContext('2d').drawImage(videoRef.current, 0, 0);
+                    const dataUrl = canvas.toDataURL('image/jpeg');
+                    resizeImage(dataUrl).then(resized => {
+                        setAttachment(resized);
+                        setShowCamera(false);
+                        scanImage(resized);
+                    });
+                };
+
+                const handleFileChange = async (e) => {
                     const file = e.target.files[0];
-                    if (file) {
+                    if (!file) return;
+
+                    // Helper to read file
+                    const readFile = (f) => new Promise(resolve => {
                         const reader = new FileReader();
-                        reader.onloadend = () => {
-                            setFileBase64(reader.result);
-                        };
-                        reader.readAsDataURL(file);
+                        reader.onload = e => resolve(e.target.result);
+                        reader.readAsDataURL(f);
+                    });
+
+                    if (file.type === 'application/pdf') {
+                        setOcrStatus('scanning');
+                        try {
+                            // Load PDF
+                            const arrayBuffer = await file.arrayBuffer();
+                            const pdf = await pdfjsLib.getDocument(arrayBuffer).promise;
+                            const page = await pdf.getPage(1); // Get 1st page
+
+                            const viewport = page.getViewport({ scale: 1.5 });
+                            const canvas = document.createElement('canvas');
+                            const context = canvas.getContext('2d');
+                            canvas.height = viewport.height;
+                            canvas.width = viewport.width;
+
+                            await page.render({ canvasContext: context, viewport: viewport }).promise;
+                            const imgData = canvas.toDataURL('image/jpeg');
+
+                            setAttachment(imgData); // Save as image for preview/storage
+                            scanImage(imgData);
+                        } catch (err) {
+                            console.error("PDF Error", err);
+                            alert("PDF okunamadı: " + err.message);
+                            setOcrStatus('error');
+                        }
+                    }
+                    else if (file.type.startsWith('image/')) {
+                        const content = await readFile(file);
+                        resizeImage(content).then(resized => {
+                            setAttachment(resized);
+                            scanImage(resized);
+                        });
+                    }
+                    else {
+                        // Other formats (not likely due to accept attribute)
+                        const content = await readFile(file);
+                        setAttachment(content);
+                    }
+                };
+
+                const scanImage = async (imageSrc) => {
+                    if (!window.Tesseract) return;
+                    setOcrStatus('scanning');
+                    try {
+                        const { data: { text } } = await Tesseract.recognize(imageSrc, 'tur', { logger: m => console.log(m) });
+                        console.log("OCR Result:", text.toLowerCase());
+                        const lowerText = text.toLowerCase();
+
+                        // 1. Date Extraction (DD.MM.YYYY, DD/MM/YYYY, DD-MM-YYYY)
+                        const dateMatch = text.match(/(\d{2}[./-]\d{2}[./-]\d{4})/);
+                        if (dateMatch && dateRef.current) {
+                            const parts = dateMatch[0].split(/[./-]/);
+                            // Ensure valid date parts
+                            if (parts[2].length === 4) {
+                                dateRef.current.value = `${parts[2]}-${parts[1]}-${parts[0]}`;
+                            }
+                        }
+
+                        // 2. Amount Extraction
+                        // Strategy:
+                        // A. Look for specific keywords (TOPLAM, TUTAR) and take the number on that line.
+                        // B. Fallback: Find the largest number with a decimal part (,xx or .xx).
+
+                        let bestAmount = 0;
+                        const lines = text.split('\n');
+                        const amountKeywords = ['TOPLAM', 'TUTAR', 'ODENECEK', 'GENEL'];
+
+                        // Strategy A: Keyword Search
+                        for (const line of lines) {
+                            const upperLine = line.toUpperCase();
+                            if (amountKeywords.some(k => upperLine.includes(k))) {
+                                // Extract all numbers from this line
+                                const matches = line.match(/(\d+[.,]\d{2,})/g);
+                                if (matches) {
+                                    for (const m of matches) {
+                                        // Replace dots (thousands) with empty, replace comma with dot
+                                        // Standard TR format: 1.000,50 -> 1000.50
+                                        let valStr = m.replace(/\./g, '').replace(',', '.');
+                                        let val = parseFloat(valStr);
+                                        if (!isNaN(val) && val > bestAmount) bestAmount = val;
+                                    }
+                                }
+                            }
+                        }
+
+                        // Strategy B: Fallback if found nothing significant (< 1)
+                        if (bestAmount < 1) {
+                            // Look for any number that looks like currency (ends with ,00 or .00 or similar)
+                            const matches = text.match(/(\d{1, 3}(\.\d{3})*,\d{2})/g); // Matches 1.000,00
+                            if (matches) {
+                                for (const m of matches) {
+                                    let valStr = m.replace(/\./g, '').replace(',', '.');
+                                    let val = parseFloat(valStr);
+                                    if (!isNaN(val) && val > bestAmount) bestAmount = val;
+                                }
+                            }
+                        }
+
+                        // Strategy C: Last resort, pure max number finding (careful with dates)
+                        if (bestAmount < 1) {
+                            const matches = text.match(/(\d+[.,]\d{2})/g);
+                            if (matches) {
+                                for (const m of matches) {
+                                    let val = parseFloat(m.replace(',', '.'));
+                                    // Avoid date-like numbers (e.g. 20.24) if possible, favor larger ones
+                                    if (val > bestAmount && val < 500000) bestAmount = val;
+                                }
+                            }
+                        }
+
+                        if (bestAmount > 0 && amountRef.current) {
+                            amountRef.current.value = bestAmount;
+                        }
+
+                        // 3. Liters Extraction (Volume)
+                        // Look for digits followed by "lt", "litre", "liter"
+                        const literMatch = lowerText.match(/(\d+[.,]\d{2})\s*(lt|litre|liter)/);
+                        if (literMatch) {
+                            const lit = parseFloat(literMatch[1].replace(',', '.'));
+                            const literInput = document.getElementsByName('litre')[0];
+                            if (literInput) literInput.value = lit;
+                        }
+
+                        // 4. Fuel Type Extraction
+                        // Look for keywords
+                        const fuelTypeInput = document.getElementsByName('yakitTipi')[0];
+                        if (fuelTypeInput) {
+                            if (lowerText.includes('motorin') || lowerText.includes('diesel') || lowerText.includes('dizel')) fuelTypeInput.value = 'Motorin';
+                            else if (lowerText.includes('benzin') || lowerText.includes('kurşunsuz')) fuelTypeInput.value = 'Benzin';
+                            else if (lowerText.includes('lpg') || lowerText.includes('otogaz')) fuelTypeInput.value = 'LPG';
+                        }
+
+                        // 5. Description Auto-fill (Store/Merchant Name)
+                        // Simple heuristic: First line often merchant name
+                        // 5. Description Auto-fill (Store/Merchant Name)
+                        // Simple heuristic: First line often merchant name
+                        const merchantLines = text.split('\n').filter(l => l.trim().length > 3);
+                        const descInput = document.getElementsByName('aciklama')[0];
+                        if (descInput && merchantLines.length > 0) {
+                            // clean up common header garbage
+                            let merchant = merchantLines[0].trim();
+                            if (merchant.toUpperCase().includes('FIS') || merchant.toUpperCase().includes('FATURA')) merchant = merchantLines[1] || merchant;
+                            descInput.value = merchant + " - Otomatik Okundu";
+                        }
+
+                        setOcrStatus('success');
+                    } catch (err) {
+                        console.error(err);
+                        setOcrStatus('error');
                     }
                 };
 
                 const handleSubmit = (e) => {
                     e.preventDefault();
-                    const formData = Object.fromEntries(new FormData(e.target));
-                    if (fileBase64) {
-                        formData.dokuman = fileBase64;
-                    }
-                    onSubmit(formData);
+                    const formData = new FormData(e.target);
+                    const data = Object.fromEntries(formData);
+                    onSubmit({ ...data, vehicleId, dokuman: attachment });
                 };
 
                 return (
                     <form onSubmit={handleSubmit}>
-                        <div className="form-group">
-                            <label className="form-label">Araç</label>
-                            <select name="vehicleId" defaultValue={initialVehicleId || ""} required>
-                                <option value="" disabled>Seçiniz</option>
-                                {vehicles.map(v => <option key={v.id} value={v.id}>{v.plaka} - {v.marka}</option>)}
+                        <div className="form-group"><label className="form-label">Araç Seçimi</label>
+                            <select name="vehicleId" value={vehicleId} onChange={e => setVehicleId(e.target.value)} disabled={!!initialVehicleId}>
+                                {vehicles.map(v => <option key={v.id} value={v.id}>{v.plaka}</option>)}
                             </select>
                         </div>
-                        <div className="tabs">
-                            {['YAKIT', 'TAMIRAT', 'DUZENLI'].map(t => (
-                                <div key={t} className={`tab ${type === t ? 'active' : ''}`} onClick={() => setType(t)}>
-                                    {t === 'DUZENLI' ? 'DÜZENLİ ÖDEME' : t}
+
+                        <div className="form-group" style={{ background: 'rgba(255,255,255,0.05)', padding: '10px', borderRadius: '8px' }}>
+                            <label className="form-label">Fiş / Fatura Ekle (Otomatik Okuma)</label>
+
+                            {!showCamera && !attachment && (
+                                <div style={{ display: 'flex', gap: '10px' }}>
+                                    <button type="button" className="btn btn-primary" onClick={() => setShowCamera(true)} style={{ flex: 1 }}><Icon name="camera" /> Fotoğraf Çek</button>
+                                    <label className="btn btn-secondary" style={{ flex: 1, cursor: 'pointer', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '5px' }}>
+                                        <Icon name="image" /> Dosya Yükle
+                                        <input type="file" accept="image/*,.pdf" hidden onChange={handleFileChange} />
+                                    </label>
                                 </div>
-                            ))}
+                            )}
+
+                            {showCamera && (
+                                <div style={{ textAlign: 'center' }}>
+                                    <video ref={videoRef} autoPlay playsInline style={{ width: '100%', borderRadius: '8px', marginBottom: '10px' }} />
+                                    <div style={{ display: 'flex', gap: '10px', justifyContent: 'center' }}>
+                                        <button type="button" className="btn btn-primary" onClick={capture}>Çek ve Tara</button>
+                                        <button type="button" className="btn btn-secondary" onClick={() => setShowCamera(false)}>İptal</button>
+                                    </div>
+                                </div>
+                            )}
+
+                            {attachment && (
+                                <div style={{ position: 'relative', marginTop: '10px' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px', background: 'rgba(0,0,0,0.2)', borderRadius: '8px', cursor: 'pointer' }} onClick={() => {
+                                        // Helper to open Base64 in new tab
+                                        try {
+                                            const type = attachment.startsWith('data:application/pdf') ? 'application/pdf' : 'image/jpeg';
+                                            const base64Data = attachment.split(',')[1];
+                                            const byteCharacters = atob(base64Data);
+                                            const byteNumbers = new Array(byteCharacters.length);
+                                            for (let i = 0; i < byteCharacters.length; i++) {
+                                                byteNumbers[i] = byteCharacters.charCodeAt(i);
+                                            }
+                                            const byteArray = new Uint8Array(byteNumbers);
+                                            const blob = new Blob([byteArray], { type: type });
+                                            const blobUrl = URL.createObjectURL(blob);
+                                            window.open(blobUrl, '_blank');
+                                        } catch (e) {
+                                            console.error("Preview error", e);
+                                            alert("Önizleme açılamadı: " + e.message);
+                                        }
+                                    }}>
+                                        {attachment.startsWith('data:image') ?
+                                            <img src={attachment} style={{ height: '50px', borderRadius: '4px' }} /> :
+                                            <Icon name="file" size={30} />}
+                                        <div style={{ flex: 1, fontSize: '0.9rem' }}>Belge Eklendi (Görüntülemek için tıkla)</div>
+                                        <button type="button" className="btn btn-secondary" onClick={(e) => { e.stopPropagation(); setAttachment(null); setOcrStatus('idle'); }} style={{ padding: '5px', color: 'red' }}><Icon name="x" /></button>
+                                    </div>
+                                    {ocrStatus === 'scanning' && <div style={{ color: 'var(--primary)', fontSize: '0.8rem', marginTop: '5px' }}>📄 Fiş okunuyor... (Litre, Tutar, Tarih aranıyor)</div>}
+                                    {ocrStatus === 'success' && <div style={{ color: '#10b981', fontSize: '0.8rem', marginTop: '5px' }}>✅ Fiş okundu! Bilgiler otomatik dolduruldu.</div>}
+                                    {ocrStatus === 'error' && <div style={{ color: 'red', fontSize: '0.8rem', marginTop: '5px' }}>⚠️ Okuma başarısız, lütfen elle girin.</div>}
+                                </div>
+                            )}
                         </div>
-                        <input type="hidden" name="kategori" value={type} />
+
+                        <div className="form-group"><label className="form-label">Harcama Tipi</label>
+                            <div className="tabs">
+                                {['YAKIT', 'TAMIRAT', 'DUZENLI', 'DIGER'].map(t => (
+                                    <div key={t} className={`tab ${type === t ? 'active' : ''}`} onClick={() => setType(t)}>{t}</div>
+                                ))}
+                            </div>
+                            <input type="hidden" name="kategori" value={type} />
+                        </div>
 
                         <div className="row">
-                            <div className="col form-group"><label className="form-label">Tarih</label><input type="date" name="tarih" required defaultValue={new Date().toISOString().split('T')[0]} /></div>
-                            <div className="col form-group"><label className="form-label">Tutar (TL)</label><input type="number" step="0.01" name="tutar" required /></div>
+                            <div className="col form-group">
+                                <label className="form-label">Tarih</label>
+                                <input ref={dateRef} type="date" name="tarih" required defaultValue={new Date().toISOString().split('T')[0]} />
+                            </div>
+                            <div className="col form-group">
+                                <label className="form-label">Tutar (TL)</label>
+                                <input ref={amountRef} type="number" step="0.01" name="tutar" required placeholder="0.00" />
+                            </div>
                         </div>
 
                         {type === 'YAKIT' && (
@@ -794,14 +1476,9 @@
                             </div>
                         )}
                         {type === 'TAMIRAT' && (
-                            <>
-                                <div className="form-group"><label className="form-label">Değişen Parça / İşlem Listesi</label>
-                                    <textarea name="degistirenParca" required rows="10" placeholder="Yapılan işlemleri detaylıca yazınız..."></textarea>
-                                </div>
-                                <div className="form-group"><label className="form-label">Fotoğraf / PDF Yükle</label>
-                                    <input type="file" accept="image/*,.pdf" onChange={handleFileChange} />
-                                </div>
-                            </>
+                            <div className="form-group"><label className="form-label">Değişen Parça / İşlem Listesi</label>
+                                <textarea name="degistirenParca" required={type === 'TAMIRAT'} rows="5" placeholder="Yapılan işlemleri detaylıca yazınız..."></textarea>
+                            </div>
                         )}
                         {type === 'DUZENLI' && (
                             <div className="form-group"><label className="form-label">Ödeme Tipi</label>
@@ -809,7 +1486,7 @@
                             </div>
                         )}
 
-                        <div className="form-group"><label className="form-label">Genel Açıklama</label><textarea name="aciklama" rows="3"></textarea></div>
+                        <div className="form-group"><label className="form-label">Açıklama</label><textarea name="aciklama" rows="3"></textarea></div>
                         <div className="row" style={{ marginTop: '20px' }}>
                             <button type="button" className="btn btn-secondary col" onClick={onCancel}>İptal</button>
                             <button type="submit" className="btn btn-primary col">Kaydet</button>
@@ -818,7 +1495,140 @@
                 );
             };
 
-            const VehicleDetailModal = ({ vehicle, expenses, appointments, onClose, onAddAppointment, onAddExpense }) => {
+            const WebcamModal = ({ onCapture, onClose }) => {
+                const videoRef = React.useRef(null);
+                const [error, setError] = useState(null);
+
+                useEffect(() => {
+                    navigator.mediaDevices.getUserMedia({ video: true })
+                        .then(stream => { if (videoRef.current) videoRef.current.srcObject = stream; })
+                        .catch(err => setError("Kameraya erişilemedi: " + err.message));
+                    return () => {
+                        const stream = videoRef.current?.srcObject;
+                        if (stream) stream.getTracks().forEach(t => t.stop());
+                    };
+                }, []);
+
+                const capture = () => {
+                    if (!videoRef.current) return;
+                    const canvas = document.createElement('canvas');
+                    canvas.width = videoRef.current.videoWidth;
+                    canvas.height = videoRef.current.videoHeight;
+                    canvas.getContext('2d').drawImage(videoRef.current, 0, 0);
+                    onCapture(canvas.toDataURL('image/jpeg'));
+                };
+
+                return (
+                    <Modal title="Fotoğraf Çek" onClose={onClose}>
+                        <div style={{ textAlign: 'center' }}>
+                            {error ? <div style={{ color: 'red' }}>{error}</div> : <video ref={videoRef} autoPlay playsInline style={{ width: '100%', borderRadius: '8px', marginBottom: '10px' }} />}
+                            <button className="btn btn-primary" onClick={capture}><Icon name="camera" /> Çek ve Kaydet</button>
+                        </div>
+                    </Modal>
+                );
+            };
+
+            const MigrationBanner = ({ onExport, onRecover }) => {
+                const isFile = window.location.protocol === 'file:';
+                if (!isFile) return null;
+
+                const checkData = () => {
+                    const saved = localStorage.getItem('vehicleApp_data');
+                    if (saved && saved.length > 1000) {
+                        alert("VERİ BULUNDU! Boyut: " + saved.length + " karakter. İndirme tuşuna basıp yedeği alabilirsiniz.");
+                        onRecover(); // Load it into view
+                    } else {
+                        alert("Veri bulunamadı veya çok küçük (" + (saved ? saved.length : 0) + ").");
+                    }
+                };
+
+                return (
+                    <div style={{
+                        position: 'fixed', top: 0, left: 0, right: 0,
+                        background: '#ef4444', color: 'white',
+                        padding: '20px', zIndex: 9999, textAlign: 'center',
+                        boxShadow: '0 4px 20px rgba(0,0,0,0.5)'
+                    }}>
+                        <h1 style={{ margin: '0 0 10px 0', fontSize: '24px' }}>⚠️ ESKİ SİSTEMDESİNİZ</h1>
+                        <p style={{ marginBottom: '15px', fontSize: '16px' }}>
+                            Bu veriler sadece bu dosyada kayıtlı. Yeni sisteme geçmek için aşağıdaki butona basıp yedeğinizi indirin.
+                        </p>
+                        <button className="btn" style={{
+                            background: 'white', color: '#ef4444',
+                            fontSize: '20px', fontWeight: 'bold',
+                            padding: '12px 24px', border: 'none', borderRadius: '8px', cursor: 'pointer'
+                        }} onClick={onExport}>
+                            <Icon name="download" /> 1. ADIM: VERİLERİ İNDİR (YEDEKLE)
+                        </button>
+                    </div>
+                );
+            };
+
+            const ExpenseDetailsModal = ({ expense, onClose }) => (
+                <Modal title="Harcama Detayları" onClose={onClose}>
+                    <div style={{ padding: '10px' }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
+                            <div>
+                                <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Tarih</label>
+                                <div style={{ fontWeight: 'bold' }}>{formatDate(expense.tarih)}</div>
+                            </div>
+                            <div>
+                                <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Kategori</label>
+                                <div style={{ fontWeight: 'bold' }}>{expense.kategori}</div>
+                            </div>
+                            <div>
+                                <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Tutar</label>
+                                <div style={{ fontWeight: 'bold', color: '#fbbf24', fontSize: '1.2rem' }}>{formatCurrency(expense.tutar)}</div>
+                            </div>
+                            {expense.litre && (
+                                <div>
+                                    <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Litre & Yakıt</label>
+                                    <div>{expense.litre} Litre {expense.yakitTipi}</div>
+                                </div>
+                            )}
+                        </div>
+                        <div style={{ marginTop: '15px' }}>
+                            <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Açıklama / Detay</label>
+                            <div style={{ background: 'rgba(255,255,255,0.05)', padding: '10px', borderRadius: '8px', minHeight: '60px' }}>
+                                {expense.aciklama || expense.degistirenParca || "Açıklama girilmemiş."}
+                            </div>
+                        </div>
+                        <div style={{ marginTop: '20px', display: 'flex', justifyContent: 'center' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', color: expense.dokuman ? '#10b981' : 'var(--text-muted)' }}>
+                                <Icon name={expense.dokuman ? "file" : "x"} />
+                                {expense.dokuman ? "Belge Yüklü" : "Belge Yüklenmemiş"}
+                            </div>
+                        </div>
+                    </div>
+                </Modal>
+            );
+
+            const ImageViewerModal = ({ src, onClose }) => {
+                const [zoom, setZoom] = useState(1);
+                return (
+                    <div className="modal-overlay" onClick={(e) => e.target === e.currentTarget && onClose()} style={{ zIndex: 2000, backgroundColor: 'rgba(0,0,0,0.9)' }}>
+                        <div style={{ position: 'relative', width: '100%', height: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                            <div style={{ position: 'absolute', top: 20, right: 20, display: 'flex', gap: '10px', zIndex: 2001 }}>
+                                <button className="btn btn-secondary" onClick={() => setZoom(z => Math.max(0.5, z - 0.2))}><Icon name="minus" /></button>
+                                <button className="btn btn-secondary" onClick={() => setZoom(z => Math.min(3, z + 0.2))}><Icon name="plus" /></button>
+                                <button className="btn btn-danger" onClick={onClose}><Icon name="x" /></button>
+                            </div>
+                            <img
+                                src={src}
+                                style={{
+                                    transform: `scale(${zoom})`,
+                                    transition: 'transform 0.2s',
+                                    maxWidth: '90%',
+                                    maxHeight: '90%',
+                                    objectFit: 'contain'
+                                }}
+                            />
+                        </div>
+                    </div>
+                );
+            };
+
+            const VehicleDetailModal = ({ vehicle, expenses, appointments, documents, onClose, onAddAppointment, onAddExpense, onEdit, onDelete, onFileUpload, onWebcamOpen, onDeleteExpense, onDeleteAppointment, onEditExpense, onViewExpense }) => {
                 const [tab, setTab] = useState('harcamalar');
 
                 // CSV Export Helpers
@@ -845,11 +1655,41 @@
                     downloadCSV(headers + rows, `${vehicle.plaka}_randevular.csv`);
                 };
 
+                const openPreview = (dataUrl) => {
+                    try {
+                        // Detect type or default to PDF for docs
+                        const type = dataUrl.startsWith('data:image') ? 'image/jpeg' : 'application/pdf';
+                        const base64Data = dataUrl.split(',')[1];
+                        const byteCharacters = atob(base64Data);
+                        const byteNumbers = new Array(byteCharacters.length);
+                        for (let i = 0; i < byteCharacters.length; i++) {
+                            byteNumbers[i] = byteCharacters.charCodeAt(i);
+                        }
+                        const byteArray = new Uint8Array(byteNumbers);
+                        const blob = new Blob([byteArray], { type: type });
+                        const blobUrl = URL.createObjectURL(blob);
+                        window.open(blobUrl, '_blank');
+                    } catch (e) {
+                        console.error("Preview error", e);
+                        alert("Dosya açılamadı: " + e.message);
+                    }
+                };
+
                 return (
-                    <Modal title={`${vehicle.plaka} - ${vehicle.driver || 'Sürücü Yok'} Detayları`} onClose={onClose}>
+                    <Modal onClose={onClose} title={
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+                            <span>{vehicle.plaka} - {vehicle.driver}</span>
+                            <div style={{ display: 'flex', gap: '10px' }}>
+                                <button className="btn btn-secondary" onClick={() => onEdit(vehicle)}><Icon name="edit" /> Düzenle</button>
+                                <button className="btn btn-danger" onClick={() => onDelete(vehicle.id)}><Icon name="trash" /> Sil</button>
+                            </div>
+                        </div>
+                    }
+                    >
                         <div className="tabs">
                             <div className={`tab ${tab === 'harcamalar' ? 'active' : ''}`} onClick={() => setTab('harcamalar')}>Harcamalar</div>
                             <div className={`tab ${tab === 'randevular' ? 'active' : ''}`} onClick={() => setTab('randevular')}>Randevular</div>
+                            <div className={`tab ${tab === 'belgeler' ? 'active' : ''}`} onClick={() => setTab('belgeler')}>Galeri & Belgeler</div>
                         </div>
 
                         {tab === 'harcamalar' && (
@@ -862,7 +1702,7 @@
                                     {expenses.length === 0 ? <div className="text-center p-4 text-muted">Harcama kaydı yok.</div> :
                                         expenses.map(e => (
                                             <div key={e.id} className="list-item">
-                                                <div>
+                                                <div style={{ flex: 1 }}>
                                                     <div style={{ fontWeight: 600 }}>{e.kategori} <span style={{ fontSize: '0.8em', color: 'var(--text-muted)' }}>- {formatDate(e.tarih)}</span></div>
                                                     <div style={{ fontSize: '0.9em', color: 'var(--text-muted)', whiteSpace: 'pre-wrap' }}>{e.aciklama || e.degistirenParca}</div>
                                                     {e.dokuman && (
@@ -873,7 +1713,16 @@
                                                         </div>
                                                     )}
                                                 </div>
-                                                <div style={{ fontWeight: 'bold', color: '#fbbf24' }}>{formatCurrency(e.tutar)}</div>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                                                    <div style={{ fontWeight: 'bold', color: '#fbbf24', marginRight: '10px' }}>{formatCurrency(e.tutar)}</div>
+                                                    <button className="btn btn-secondary" style={{ padding: '6px 10px', fontSize: '0.8rem', display: 'flex', gap: '4px', alignItems: 'center' }} onClick={() => onViewExpense(e)} title="Detay Göster">
+                                                        <Icon name="eye" size={14} /> Göster
+                                                    </button>
+                                                    <button className="btn btn-secondary" style={{ padding: '6px 10px', fontSize: '0.8rem', display: 'flex', gap: '4px', alignItems: 'center' }} onClick={() => onEditExpense(e)} title="Düzenle">
+                                                        <Icon name="edit" size={14} /> Düzelt
+                                                    </button>
+                                                    <button className="btn btn-secondary" style={{ padding: '6px 10px', color: '#ef4444', borderColor: '#ef4444' }} onClick={() => onDeleteExpense(e.id)} title="Sil"><Icon name="trash" size={14} /></button>
+                                                </div>
                                             </div>
                                         ))}
                                 </div>
@@ -896,16 +1745,203 @@
                                 <div>
                                     {appointments.map(a => (
                                         <div key={a.id} className="list-item">
-                                            <div>
+                                            <div style={{ flex: 1 }}>
                                                 <div style={{ fontWeight: 600 }}>{formatDate(a.tarih)} - {a.saat}</div>
                                                 <div>{a.aciklama}</div>
                                             </div>
-                                            <Icon name="calendar" color="var(--primary)" />
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                                <Icon name="calendar" color="var(--primary)" />
+                                                <button className="btn btn-secondary" style={{ padding: '5px', color: '#ef4444', borderColor: '#ef4444' }} onClick={() => onDeleteAppointment(a.id)}><Icon name="trash" size={14} /></button>
+                                            </div>
                                         </div>
                                     ))}
                                 </div>
                             </div>
                         )}
+
+                        {tab === 'belgeler' && (
+                            <div>
+                                <div style={{ display: 'flex', gap: '10px', marginBottom: '20px', padding: '15px', background: 'rgba(255,255,255,0.02)', borderRadius: '8px' }}>
+                                    <label className="btn btn-primary" style={{ flex: 1, cursor: 'pointer', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px' }}>
+                                        <Icon name="image" /> Fotoğraf Ekle (JPEG/PNG)
+                                        <input type="file" accept="image/png, image/jpeg, image/jpg" hidden onChange={(e) => onFileUpload(e.target.files[0])} />
+                                    </label>
+                                    <label className="btn btn-secondary" style={{ flex: 1, cursor: 'pointer', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px' }}>
+                                        <Icon name="file" /> Belge Ekle (PDF)
+                                        <input type="file" accept=".pdf" hidden onChange={(e) => onFileUpload(e.target.files[0])} />
+                                    </label>
+                                </div>
+                                <h3 style={{ fontSize: '1rem', color: 'var(--text-muted)', marginBottom: '10px' }}>Fotoğraflar</h3>
+                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(100px, 1fr))', gap: '10px', marginBottom: '20px' }}>
+                                    {documents.filter(d => d.type === 'IMAGE').map(d => (
+                                        <div key={d.id} style={{ position: 'relative', cursor: 'pointer' }} onClick={() => openPreview(d.data)}>
+                                            <img src={d.data} style={{ width: '100%', height: '100px', objectFit: 'cover', borderRadius: '8px' }} />
+                                            <div style={{ fontSize: '0.7em', color: 'var(--text-muted)', marginTop: '2px' }}>{new Date(d.date).toLocaleDateString()}</div>
+                                        </div>
+                                    ))}
+                                </div>
+
+                                <h3 style={{ fontSize: '1rem', color: 'var(--text-muted)', marginBottom: '10px' }}>Belgeler</h3>
+                                <div>
+                                    {documents.filter(d => d.type !== 'IMAGE').map(d => (
+                                        <div key={d.id} className="list-item" style={{ cursor: 'pointer', transition: 'background 0.2s' }} onClick={() => openPreview(d.data)}>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                                <Icon name="file" />
+                                                <div>
+                                                    <div style={{ fontWeight: 600 }}>{d.name}</div>
+                                                    <div style={{ fontSize: '0.8em', color: 'var(--text-muted)' }}>{new Date(d.date).toLocaleDateString()} &bull; Tıkla ve Aç</div>
+                                                </div>
+                                            </div>
+                                            <a href={d.data} download={d.name} className="btn btn-secondary" style={{ padding: '5px', display: 'flex', alignItems: 'center', justifyContent: 'center' }} onClick={(e) => e.stopPropagation()}>
+                                                <Icon name="download" size={14} />
+                                            </a>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+                    </Modal>
+                );
+            };
+
+            const ReportsModal = ({ vehicles, expenses, onClose }) => {
+                const [mode, setMode] = useState('monthly'); // 'monthly', 'range'
+                const [year, setYear] = useState(new Date().getFullYear());
+                const [month, setMonth] = useState(new Date().getMonth());
+                const [startDate, setStartDate] = useState('');
+                const [endDate, setEndDate] = useState('');
+                const [selectedVehicle, setSelectedVehicle] = useState('all');
+                const [selectedCategory, setSelectedCategory] = useState('all');
+
+                const filteredExpenses = useMemo(() => {
+                    return expenses.filter(e => {
+                        // Date Filter
+                        const d = new Date(e.tarih);
+                        let dateMatch = true;
+                        if (mode === 'monthly') {
+                            dateMatch = d.getFullYear() === Number(year) && d.getMonth() === Number(month);
+                        } else {
+                            if (startDate && new Date(startDate) > d) dateMatch = false;
+                            if (endDate && new Date(endDate) < d) dateMatch = false;
+                        }
+
+                        // Vehicle Filter
+                        let vehicleMatch = selectedVehicle === 'all' || e.vehicleId === selectedVehicle;
+
+                        // Category Filter
+                        let catMatch = selectedCategory === 'all' || e.kategori === selectedCategory;
+
+                        return dateMatch && vehicleMatch && catMatch;
+                    });
+                }, [expenses, mode, year, month, startDate, endDate, selectedVehicle, selectedCategory]);
+
+                const totalAmount = filteredExpenses.reduce((acc, curr) => acc + Number(curr.tutar), 0);
+
+                const downloadReport = () => {
+                    const headers = "Tarih;Arac;Kategori;Tutar;Aciklama\n";
+                    const rows = filteredExpenses.map(e => {
+                        const v = vehicles.find(v => v.id === e.vehicleId);
+                        const plate = v ? v.plaka : 'Bilinmiyor';
+                        return `${e.tarih};${plate};${e.kategori};${e.tutar};${e.aciklama || ''}`;
+                    }).join("\n");
+                    const blob = new Blob(["\ufeff" + headers + rows], { type: 'text/csv;charset=utf-8;' });
+                    const url = URL.createObjectURL(blob);
+                    const link = document.createElement("a");
+                    link.href = url;
+                    link.download = "Rapor.csv";
+                    link.click();
+                };
+
+                const months = ["Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"];
+                const years = Array.from({ length: 27 }, (_, i) => 2024 + i); // 2024 to 2050
+
+                return (
+                    <Modal title="Gider Raporları" onClose={onClose}>
+                        {/* Filters */}
+                        <div style={{ background: 'rgba(255,255,255,0.05)', padding: '15px', borderRadius: '8px', marginBottom: '20px' }}>
+                            <div className="tabs" style={{ marginBottom: '15px' }}>
+                                <div className={`tab ${mode === 'monthly' ? 'active' : ''}`} onClick={() => setMode('monthly')}>Aylık</div>
+                                <div className={`tab ${mode === 'range' ? 'active' : ''}`} onClick={() => setMode('range')}>Tarih Aralığı</div>
+                            </div>
+
+                            <div className="row" style={{ marginBottom: '10px' }}>
+                                {mode === 'monthly' ? (
+                                    <>
+                                        <div className="col">
+                                            <select value={year} onChange={e => setYear(e.target.value)}>
+                                                {years.map(y => <option key={y} value={y}>{y}</option>)}
+                                            </select>
+                                        </div>
+                                        <div className="col">
+                                            <select value={month} onChange={e => setMonth(e.target.value)}>
+                                                {months.map((m, i) => <option key={i} value={i}>{m}</option>)}
+                                            </select>
+                                        </div>
+                                    </>
+                                ) : (
+                                    <>
+                                        <div className="col"><input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} placeholder="Başlangıç" /></div>
+                                        <div className="col"><input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} placeholder="Bitiş" /></div>
+                                    </>
+                                )}
+                            </div>
+                            <div className="row">
+                                <div className="col">
+                                    <select value={selectedVehicle} onChange={e => setSelectedVehicle(e.target.value)}>
+                                        <option value="all">Tüm Araçlar</option>
+                                        {vehicles.map(v => <option key={v.id} value={v.id}>{v.plaka}</option>)}
+                                    </select>
+                                </div>
+                                <div className="col">
+                                    <select value={selectedCategory} onChange={e => setSelectedCategory(e.target.value)}>
+                                        <option value="all">Tüm Giderler</option>
+                                        <option value="YAKIT">Yakıt</option>
+                                        <option value="TAMIRAT">Tamirat</option>
+                                        <option value="DUZENLI">Düzenli Ödeme</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Summary Card */}
+                        <div className="glass-panel p-4 mb-4 text-center" style={{ background: 'rgba(16, 185, 129, 0.1)', border: '1px solid rgba(16, 185, 129, 0.3)' }}>
+                            <div style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>Seçili Dönem Toplam Gider</div>
+                            <div style={{ fontSize: '2rem', fontWeight: 'bold', color: '#10b981' }}>{formatCurrency(totalAmount)}</div>
+                        </div>
+
+                        {/* Actions */}
+                        <div style={{ marginBottom: '15px', textAlign: 'right' }}>
+                            <button className="btn btn-secondary" onClick={downloadReport}><Icon name="download" /> Raporu İndir (CSV)</button>
+                        </div>
+
+                        {/* Table */}
+                        <div style={{ maxHeight: '400px', overflowY: 'auto' }}>
+                            {filteredExpenses.length === 0 ? <div className="text-muted text-center">Kayıt bulunamadı.</div> :
+                                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                                    <thead>
+                                        <tr style={{ borderBottom: '1px solid var(--glass-border)', textAlign: 'left' }}>
+                                            <th style={{ padding: '10px' }}>Tarih</th>
+                                            <th style={{ padding: '10px' }}>Araç</th>
+                                            <th style={{ padding: '10px' }}>Tür</th>
+                                            <th style={{ padding: '10px', textAlign: 'right' }}>Tutar</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {filteredExpenses.map(e => {
+                                            const v = vehicles.find(v => v.id === e.vehicleId);
+                                            return (
+                                                <tr key={e.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                                                    <td style={{ padding: '10px' }}>{formatDate(e.tarih)}</td>
+                                                    <td style={{ padding: '10px' }}>{v ? v.plaka : '-'}</td>
+                                                    <td style={{ padding: '10px' }}>{e.kategori}</td>
+                                                    <td style={{ padding: '10px', textAlign: 'right', fontWeight: 'bold' }}>{formatCurrency(e.tutar)}</td>
+                                                </tr>
+                                            )
+                                        })}
+                                    </tbody>
+                                </table>
+                            }
+                        </div>
                     </Modal>
                 );
             };

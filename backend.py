@@ -45,9 +45,11 @@ class MyHandler(http.server.SimpleHTTPRequestHandler):
                     self.wfile.write(f.read())
             else:
                 self.wfile.write(b'{}')
+        elif self.path == '/':
+            self.path = '/index.html'
+            super().do_GET()
         else:
-            self.send_response(404)
-            self.end_headers()
+            super().do_GET()
 
     def do_POST(self):
         if self.path == '/api/data':
@@ -58,6 +60,11 @@ class MyHandler(http.server.SimpleHTTPRequestHandler):
                 # Validate JSON
                 data = json.loads(post_data)
                 
+                # Create Backup
+                if os.path.exists(DATA_FILE):
+                    import shutil
+                    shutil.copy(DATA_FILE, DATA_FILE + ".bak")
+
                 # Save to file
                 with open(DATA_FILE, 'w', encoding='utf-8') as f:
                     json.dump(data, f, indent=4)
@@ -75,7 +82,12 @@ class MyHandler(http.server.SimpleHTTPRequestHandler):
             self.end_headers()
 
 print(f"Backend running on port {PORT}...")
-with socketserver.TCPServer(("", PORT), MyHandler) as httpd:
+class ThreadedHTTPServer(socketserver.ThreadingTCPServer):
+    allow_reuse_address = True
+    daemon_threads = True
+
+print(f"Backend running on port {PORT}...")
+with ThreadedHTTPServer(("", PORT), MyHandler) as httpd:
     try:
         httpd.serve_forever()
     except KeyboardInterrupt:
