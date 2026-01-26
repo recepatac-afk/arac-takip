@@ -494,7 +494,11 @@
 
 
 
-                const API_URL = 'http://localhost:8070/api/data';
+                // Detect Environment
+                const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+                // TODO: USER MUST REPLACE THIS URL AFTER DEPLOYING BACKEND
+                const PRODUCTION_API_URL = 'https://YOUR-BACKEND-URL.onrender.com/api/data';
+                const API_URL = isLocal ? 'http://localhost:8070/api/data' : PRODUCTION_API_URL;
 
                 // Load Data
                 useEffect(() => {

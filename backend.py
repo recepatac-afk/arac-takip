@@ -4,7 +4,7 @@ import socketserver
 import json
 import os
 
-PORT = 8070
+PORT = int(os.environ.get("PORT", 8070))
 DATA_FILE = "data.json"
 
 # Initialize Data File if missing

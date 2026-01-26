@@ -1,0 +1,2 @@
+# No external dependencies required for standard library http.server
+# But file presence is often needed for PaaS detection
