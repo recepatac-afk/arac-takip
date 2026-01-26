@@ -3,8 +3,23 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Araç Takip Dashboard Premium</title>
+
+    <!-- PWA -->
+    <link rel="manifest" href="./manifest.json">
+    <meta name="theme-color" content="#0f172a">
+    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/3202/3202926.png">
+
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js')
+                    .then(reg => console.log('SW registered: ', reg))
+                    .catch(err => console.log('SW registration failed: ', err));
+            });
+        }
+    </script>
 
     <!-- ERROR HANDLING FOR DEBUGGING -->
     <script>
@@ -67,6 +82,9 @@
                 radial-gradient(at 100% 0%, rgba(16, 185, 129, 0.15) 0px, transparent 50%);
             color: var(--text-main);
             min-height: 100vh;
+            overflow-x: hidden;
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
         }
 
         /* Scrollbar */
@@ -1781,22 +1799,55 @@
                                     <button className="btn btn-secondary" onClick={exportAppointments}><Icon name="download" size={16} /> Excel (CSV)</button>
                                 </div>
                                 <form onSubmit={(e) => { e.preventDefault(); onAddAppointment(Object.fromEntries(new FormData(e.target))); e.target.reset(); }} style={{ marginBottom: '20px', padding: '15px', background: 'rgba(255,255,255,0.02)', borderRadius: '8px' }}>
-                                    <div className="row">
-                                        <div className="col"><input type="date" name="tarih" required className="w-full" /></div>
-                                        <div className="col"><input type="time" name="saat" required className="w-full" /></div>
+
+                                    <div className="form-group">
+                                        <label className="form-label">Randevu Türü</label>
+                                        <select name="type" className="w-full" required defaultValue="Genel Muayene">
+                                            <option value="Genel Muayene">Genel Muayene</option>
+                                            <option value="Egzos Muayene">Egzos Muayene</option>
+                                            <option value="Bakım">Bakım</option>
+                                            <option value="Lastik Değişimi">Lastik Değişimi</option>
+                                            <option value="Sigorta/Kasko">Sigorta/Kasko</option>
+                                            <option value="Diğer">Diğer</option>
+                                        </select>
                                     </div>
-                                    <div className="mt-2" style={{ marginTop: '10px' }}><input name="aciklama" placeholder="Randevu notu..." required className="w-full" /></div>
+
+                                    <div className="row">
+                                        <div className="col"><label className="form-label">Randevu Tarihi</label><input type="date" name="tarih" required className="w-full" /></div>
+                                        <div className="col"><label className="form-label">Saat</label><input type="time" name="saat" required className="w-full" /></div>
+                                    </div>
+
+                                    <div style={{ margin: '15px 0', padding: '10px', background: 'rgba(255,255,255,0.05)', borderRadius: '8px', border: '1px solid var(--glass-border)' }}>
+                                        <div style={{ fontSize: '0.9rem', marginBottom: '10px', color: 'var(--primary)', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '5px' }}>
+                                            <Icon name="calendar" size={16} /> Hatırlatıcı Kur
+                                        </div>
+                                        <div className="row">
+                                            <div className="col"><label className="form-label">Hatırlatma Tarihi</label><input type="date" name="hatirlatmaTarih" className="w-full" /></div>
+                                            <div className="col"><label className="form-label">Saat</label><input type="time" name="hatirlatmaSaat" className="w-full" /></div>
+                                        </div>
+                                    </div>
+
+                                    <div className="form-group">
+                                        <label className="form-label">Not / Açıklama</label>
+                                        <textarea name="aciklama" placeholder="Randevu ile ilgili notlar..." rows="3" className="w-full"></textarea>
+                                    </div>
+
                                     <button type="submit" className="btn btn-primary mt-2" style={{ marginTop: '10px', width: '100%' }}>Randevu Ekle</button>
                                 </form>
                                 <div>
                                     {appointments.map(a => (
                                         <div key={a.id} className="list-item">
                                             <div style={{ flex: 1 }}>
-                                                <div style={{ fontWeight: 600 }}>{formatDate(a.tarih)} - {a.saat}</div>
-                                                <div>{a.aciklama}</div>
+                                                <div style={{ fontWeight: 600, color: 'var(--primary)' }}>{a.type || 'Randevu'}</div>
+                                                <div style={{ fontSize: '0.9rem' }}>{formatDate(a.tarih)} - {a.saat}</div>
+                                                {a.aciklama && <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginTop: '2px' }}>{a.aciklama}</div>}
+                                                {a.hatirlatmaTarih && (
+                                                    <div style={{ fontSize: '0.8rem', color: '#fbbf24', marginTop: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                                        <Icon name="calendar" size={12} /> Hatırlatma: {formatDate(a.hatirlatmaTarih)} {a.hatirlatmaSaat}
+                                                    </div>
+                                                )}
                                             </div>
                                             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                                <Icon name="calendar" color="var(--primary)" />
                                                 <button className="btn btn-secondary" style={{ padding: '5px', color: '#ef4444', borderColor: '#ef4444' }} onClick={() => onDeleteAppointment(a.id)}><Icon name="trash" size={14} /></button>
                                             </div>
                                         </div>
