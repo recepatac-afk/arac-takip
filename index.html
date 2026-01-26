@@ -374,6 +374,48 @@
         .w-full {
             width: 100%;
         }
+
+        /* Mobile Responsiveness */
+        @media (max-width: 768px) {
+            .app-container {
+                padding: 10px;
+            }
+
+            .top-bar {
+                flex-direction: column;
+                gap: 15px;
+                align-items: flex-start;
+            }
+
+            .stats-grid,
+            .charts-section,
+            .vehicles-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .row {
+                flex-direction: column;
+            }
+
+            .modal-content {
+                width: 95%;
+                margin: 20px auto;
+            }
+
+            .chart-container {
+                height: 250px;
+            }
+
+            .btn {
+                width: 100%;
+                justify-content: center;
+                margin-bottom: 10px;
+            }
+
+            .tabs {
+                flex-wrap: wrap;
+            }
+        }
     </style>
 </head>
 
