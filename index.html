@@ -12,12 +12,45 @@
     <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/3202/3202926.png">
 
     <script>
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('./sw.js')
-                    .then(reg => console.log('SW registered: ', reg))
-                    .catch(err => console.log('SW registration failed: ', err));
-            });
+        // EMERGENCY RESET SCRIPT
+        if (window.location.search.includes('reset=true')) {
+            console.log("Emergency Reset Triggered!");
+            if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.getRegistrations().then(function (registrations) {
+                    for (let registration of registrations) {
+                        registration.unregister();
+                        console.log("Unregistered Service Worker:", registration);
+                    }
+                });
+            }
+            if ('caches' in window) {
+                caches.keys().then(function (names) {
+                    for (let name of names) {
+                        caches.delete(name);
+                        console.log("Deleted Cache:", name);
+                    }
+                });
+            }
+            alert("Uygulama Sıfırlandı! Şimdi temiz bir sayfa açılıyor...");
+            // Remove the query param and reload cleanly after a short delay
+            setTimeout(() => {
+                window.location.href = window.location.pathname;
+            }, 1000);
+        } else {
+            // Normal Service Worker Registration
+            if ('serviceWorker' in navigator) {
+                window.addEventListener('load', () => {
+                    navigator.serviceWorker.register('./sw.js')
+                        .then(registration => {
+                            console.log('SW Registered: ', registration);
+                            // Force check for update
+                            registration.update();
+                        })
+                        .catch(registrationError => {
+                            console.log('SW Registration Failed: ', registrationError);
+                        });
+                });
+            }
         }
     </script>
 
