@@ -791,6 +791,58 @@
                     }
                 };
 
+                const forcePushToCloud = async () => {
+                    if (confirm("DİKKAT: Bilgisayarınızdaki bu veriler, buluttaki (internetteki) tüm verilerin üzerine yazılacak. Emin misiniz?")) {
+                        setBackendStatus('checking');
+                        const data = {
+                            vehicles,
+                            expenses,
+                            appointments,
+                            settings,
+                            documents,
+                            updatedAt: new Date().toISOString() // Brand new timestamp
+                        };
+                        try {
+                            const res = await fetch(API_URL, {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify(data)
+                            });
+                            if (res.ok) {
+                                alert("Başarılı! Verileriniz buluta gönderildi. Diğer cihazlarda sayfayı yenileyince gelecek. 🟢");
+                                setBackendStatus('connected');
+                            } else {
+                                alert("Hata! Sunucu kabul etmedi. Kod: " + res.status);
+                            }
+                        } catch (e) {
+                            alert("Bağlantı Hatası: " + e.message);
+                        }
+                    }
+                };
+
+                const forcePullFromCloud = async () => {
+                    if (confirm("DİKKAT: Buluttaki veriler indirilip, şu anki ekranınızdaki verilerin üzerine yazılacak. Emin misiniz?")) {
+                        setBackendStatus('checking');
+                        try {
+                            const response = await fetch(API_URL);
+                            if (response.ok) {
+                                const cloudData = await response.json();
+                                setVehicles(cloudData.vehicles || []);
+                                setExpenses(cloudData.expenses || []);
+                                setAppointments(cloudData.appointments || []);
+                                setSettings(cloudData.settings || initialSettings);
+                                setDocuments(cloudData.documents || []);
+                                alert("Başarılı! Veriler buluttan çekildi. 🟢");
+                                setBackendStatus('connected');
+                            } else {
+                                alert("Buluttan veri çekilemedi. Hata Kodu: " + response.status);
+                            }
+                        } catch (e) {
+                            alert("Bağlantı Hatası: " + e.message);
+                        }
+                    }
+                };
+
                 const exportData = () => {
                     const data = { vehicles, expenses, appointments, settings, documents };
                     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
@@ -1175,6 +1227,16 @@
                                         <Icon name="file" /> Veri Yükle (Geri Getir)
                                         <input type="file" accept=".json" hidden onChange={importData} />
                                     </label>
+                                </div>
+                                <hr style={{ borderColor: 'var(--glass-border)', margin: '20px 0' }} />
+                                <h4 style={{ marginBottom: '10px', color: 'var(--primary)' }}>Bulut Senkronizasyon (Elle)</h4>
+                                <div style={{ display: 'flex', gap: '10px' }}>
+                                    <button className="btn btn-primary" style={{ flex: 1, backgroundColor: '#f59e0b' }} onClick={forcePushToCloud}>
+                                        ☁️⬆️ Buluta GÖNDER (Buradakini Kaydet)
+                                    </button>
+                                    <button className="btn btn-primary" style={{ flex: 1, backgroundColor: '#3b82f6' }} onClick={forcePullFromCloud}>
+                                        ☁️⬇️ Buluttan ÇEK (Orayı İndir)
+                                    </button>
                                 </div>
                             </Modal>
                         )}
