@@ -547,6 +547,7 @@
                 const [viewingDocument, setViewingDocument] = useState(null);
                 const [viewingExpenseDetails, setViewingExpenseDetails] = useState(null);
                 const [menuOpenId, setMenuOpenId] = useState(null);
+                const [backendStatus, setBackendStatus] = useState('unknown');
 
                 // ... (state definitions)
 
@@ -555,10 +556,11 @@
 
 
                 // Detect Environment
-                const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+                const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.protocol === 'file:';
                 // TODO: USER MUST REPLACE THIS URL AFTER DEPLOYING BACKEND
                 const PRODUCTION_API_URL = 'https://arac-takip-fopw.onrender.com/api/data';
-                const API_URL = isLocal ? 'http://localhost:8070/api/data' : PRODUCTION_API_URL;
+                // Use 127.0.0.1 instead of localhost to avoid IPv6 resolution issues
+                const API_URL = isLocal ? 'http://127.0.0.1:8070/api/data' : PRODUCTION_API_URL;
 
                 // Load Data
                 useEffect(() => {
@@ -572,9 +574,13 @@
                             if (response.ok) {
                                 backendData = await response.json();
                                 console.log("Backend data fetched.");
+                                setBackendStatus('connected');
+                            } else {
+                                setBackendStatus('disconnected');
                             }
                         } catch (err) {
                             console.warn("Backend unavailable:", err);
+                            setBackendStatus('disconnected');
                         }
 
                         // 2. Fetch LocalStorage Data
@@ -878,13 +884,27 @@
                 return (
 
                     <div className="app-container">
-                        <MigrationBanner onExport={exportData} onRecover={forceReload} />
+                        {!settings.hideBanner && <MigrationBanner onExport={exportData} onRecover={forceReload} backendStatus={backendStatus} onClose={() => setSettings(s => ({ ...s, hideBanner: true }))} />}
 
                         {/* TOP BAR */}
                         <div className="top-bar glass-panel">
                             <div className="brand flex items-center gap-2">
                                 <Icon name="car" size={32} />
-                                <span>FiloTakip Pro</span>
+                                <span>FiloTakip Pro <small style={{ opacity: 0.5, fontSize: '0.6rem' }}>v2.1</small></span>
+                                <div style={{ marginLeft: '15px', fontSize: '0.75rem', padding: '2px 8px', borderRadius: '12px', background: backendStatus === 'connected' ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)', color: backendStatus === 'connected' ? '#10b981' : '#ef4444', border: `1px solid ${backendStatus === 'connected' ? 'rgba(16, 185, 129, 0.3)' : 'rgba(239, 68, 68, 0.3)'}`, display: 'flex', alignItems: 'center', gap: '5px', cursor: 'pointer' }}
+                                    onClick={() => {
+                                        setBackendStatus('checking');
+                                        fetch(API_URL).then(res => {
+                                            if (res.ok) { setBackendStatus('connected'); alert("Bağlantı Başarılı! 🟢"); }
+                                            else { setBackendStatus('disconnected'); alert("Bağlantı Hatası: Sunucu yanıt vermedi (Durum: " + res.status + ")"); }
+                                        }).catch(err => {
+                                            setBackendStatus('disconnected');
+                                            alert("Bağlantı Hatası: " + err.message + "\n\nLütfen siyah pencerenin (backend) açık olduğundan emin olun.");
+                                        });
+                                    }}
+                                >
+                                    {backendStatus === 'connected' ? '● Kaydediliyor' : (backendStatus === 'checking' ? '● Kontrol Ediliyor...' : '● Kaydedilmiyor (Offline) - Tıkla Dene')}
+                                </div>
                             </div>
                             <div style={{ display: 'flex', gap: '10px' }}>
                                 <button className="btn btn-secondary" onClick={() => setActiveModal('reports')}><Icon name="chart" /> Raporlar</button>
@@ -1592,9 +1612,10 @@
                 );
             };
 
-            const MigrationBanner = ({ onExport, onRecover }) => {
+            const MigrationBanner = ({ onExport, onRecover, backendStatus, onClose }) => {
                 const isFile = window.location.protocol === 'file:';
-                if (!isFile) return null;
+                // Only show banner if on file protocol AND backend is definitely NOT connected
+                if (!isFile || backendStatus === 'connected') return null;
 
                 const checkData = () => {
                     const saved = localStorage.getItem('vehicleApp_data');
@@ -1613,16 +1634,19 @@
                         padding: '20px', zIndex: 9999, textAlign: 'center',
                         boxShadow: '0 4px 20px rgba(0,0,0,0.5)'
                     }}>
-                        <h1 style={{ margin: '0 0 10px 0', fontSize: '24px' }}>⚠️ ESKİ SİSTEMDESİNİZ</h1>
+                        <div style={{ position: 'absolute', right: '20px', top: '20px', cursor: 'pointer' }} onClick={onClose}>
+                            <Icon name="x" size={24} />
+                        </div>
+                        <h1 style={{ margin: '0 0 10px 0', fontSize: '24px' }}>⚠️ ESKİ SİSTEMDESİNİZ (Dosya Modu)</h1>
                         <p style={{ marginBottom: '15px', fontSize: '16px' }}>
-                            Bu veriler sadece bu dosyada kayıtlı. Yeni sisteme geçmek için aşağıdaki butona basıp yedeğinizi indirin.
+                            Verilerinizin kaybolmaması için "run_app.bat" çalıştırılmalıdır.
                         </p>
                         <button className="btn" style={{
                             background: 'white', color: '#ef4444',
                             fontSize: '20px', fontWeight: 'bold',
                             padding: '12px 24px', border: 'none', borderRadius: '8px', cursor: 'pointer'
                         }} onClick={onExport}>
-                            <Icon name="download" /> 1. ADIM: VERİLERİ İNDİR (YEDEKLE)
+                            <Icon name="download" /> YEDEK AL
                         </button>
                     </div>
                 );
