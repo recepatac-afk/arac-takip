@@ -923,6 +923,10 @@
                     return expenses.filter(e => new Date(e.tarih).getMonth() === now.getMonth()).reduce((acc, curr) => acc + Number(curr.tutar), 0);
                 }, [expenses]);
 
+                const totalAllTimeExpenses = useMemo(() => {
+                    return expenses.reduce((acc, curr) => acc + Number(curr.tutar), 0);
+                }, [expenses]);
+
                 const upcomingAppointmentsCount = appointments.filter(a => new Date(a.tarih) >= new Date()).length;
 
                 const chartData = useMemo(() => {
@@ -1008,6 +1012,10 @@
                             <div className="glass-panel stat-card">
                                 <span className="stat-label">Bu Ay Harcama</span>
                                 <span className="stat-value" style={{ color: '#ef4444' }}>{formatCurrency(totalExpensesThisMonth)}</span>
+                            </div>
+                            <div className="glass-panel stat-card">
+                                <span className="stat-label">Genel Toplam Harcama</span>
+                                <span className="stat-value" style={{ color: '#8b5cf6' }}>{formatCurrency(totalAllTimeExpenses)}</span>
                             </div>
                             <div className="glass-panel stat-card"
                                 onClick={() => setActiveModal('allAppointments')}
