@@ -1132,6 +1132,10 @@
                                             <span>Bu Ay:</span>
                                             <span style={{ fontWeight: 'bold' }}>{formatCurrency(thisMonthExp)}</span>
                                         </div>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '15px', background: 'rgba(255,255,255,0.05)', padding: '10px', borderRadius: '8px', borderLeft: `2px solid ${color}` }}>
+                                            <span>Toplam Harcama:</span>
+                                            <span style={{ fontWeight: 'bold' }}>{formatCurrency(vExpenses.reduce((a, c) => a + Number(c.tutar), 0))}</span>
+                                        </div>
                                         <button className="btn btn-primary" style={{ width: '100%', justifyContent: 'center', background: `linear-gradient(135deg, ${color}, ${color}dd)`, border: 'none' }}
                                             onClick={() => { setSelectedVehicleId(v.id); setActiveModal('vehicleDetail'); }}>
                                             Detay Gör
@@ -1142,187 +1146,207 @@
                         </div>
 
                         {/* MODALS */}
-                        {activeModal === 'vehicle' && (
-                            <Modal title="Yeni Araç Ekle" onClose={() => setActiveModal(null)}>
-                                <form onSubmit={(e) => { e.preventDefault(); addVehicle(Object.fromEntries(new FormData(e.target))); }}>
-                                    <div className="row">
-                                        <div className="col form-group"><label className="form-label">Plaka</label><input name="plaka" required placeholder="34 ABC 123" /></div>
-                                        <div className="col form-group"><label className="form-label">Kullanan Kişi</label><input name="driver" placeholder="Ad Soyad" /></div>
-                                    </div>
-                                    <div className="row">
-                                        <div className="col form-group"><label className="form-label">Marka</label><input name="marka" required placeholder="Toyota" /></div>
-                                        <div className="col form-group"><label className="form-label">Model</label><input name="model" required placeholder="Corolla" /></div>
-                                    </div>
-                                    <div className="row">
-                                        <div className="col form-group"><label className="form-label">Yıl</label><input name="yil" type="number" required placeholder="2023" /></div>
-                                        <div className="col form-group"><label className="form-label">Renk</label><input name="renk" placeholder="Kırmızı" /></div>
-                                    </div>
-                                    <div className="row" style={{ marginTop: '20px' }}>
-                                        <button type="button" className="btn btn-secondary col" onClick={() => setActiveModal(null)}>İptal</button>
-                                        <button type="submit" className="btn btn-primary col">Kaydet</button>
-                                    </div>
-                                </form>
-                            </Modal>
-                        )}
+                        {
+                            activeModal === 'vehicle' && (
+                                <Modal title="Yeni Araç Ekle" onClose={() => setActiveModal(null)}>
+                                    <form onSubmit={(e) => { e.preventDefault(); addVehicle(Object.fromEntries(new FormData(e.target))); }}>
+                                        <div className="row">
+                                            <div className="col form-group"><label className="form-label">Plaka</label><input name="plaka" required placeholder="34 ABC 123" /></div>
+                                            <div className="col form-group"><label className="form-label">Kullanan Kişi</label><input name="driver" placeholder="Ad Soyad" /></div>
+                                        </div>
+                                        <div className="row">
+                                            <div className="col form-group"><label className="form-label">Marka</label><input name="marka" required placeholder="Toyota" /></div>
+                                            <div className="col form-group"><label className="form-label">Model</label><input name="model" required placeholder="Corolla" /></div>
+                                        </div>
+                                        <div className="row">
+                                            <div className="col form-group"><label className="form-label">Yıl</label><input name="yil" type="number" required placeholder="2023" /></div>
+                                            <div className="col form-group"><label className="form-label">Renk</label><input name="renk" placeholder="Kırmızı" /></div>
+                                        </div>
+                                        <div className="row" style={{ marginTop: '20px' }}>
+                                            <button type="button" className="btn btn-secondary col" onClick={() => setActiveModal(null)}>İptal</button>
+                                            <button type="submit" className="btn btn-primary col">Kaydet</button>
+                                        </div>
+                                    </form>
+                                </Modal>
+                            )
+                        }
 
-                        {activeModal === 'editVehicle' && editingVehicle && (
-                            <Modal title="Araç Düzenle" onClose={() => { setActiveModal(null); setEditingVehicle(null); }}>
-                                <form onSubmit={(e) => { e.preventDefault(); updateVehicle({ ...editingVehicle, ...Object.fromEntries(new FormData(e.target)) }); }}>
-                                    <div className="row">
-                                        <div className="col form-group"><label className="form-label">Plaka</label><input name="plaka" required defaultValue={editingVehicle.plaka} /></div>
-                                        <div className="col form-group"><label className="form-label">Kullanan Kişi</label><input name="driver" defaultValue={editingVehicle.driver} /></div>
-                                    </div>
-                                    <div className="row">
-                                        <div className="col form-group"><label className="form-label">Marka</label><input name="marka" required defaultValue={editingVehicle.marka} /></div>
-                                        <div className="col form-group"><label className="form-label">Model</label><input name="model" required defaultValue={editingVehicle.model} /></div>
-                                    </div>
-                                    <div className="row">
-                                        <div className="col form-group"><label className="form-label">Yıl</label><input name="yil" type="number" required defaultValue={editingVehicle.yil} /></div>
-                                        <div className="col form-group"><label className="form-label">Renk</label><input name="renk" defaultValue={editingVehicle.renk} /></div>
-                                    </div>
-                                    <div className="row" style={{ marginTop: '20px' }}>
-                                        <button type="button" className="btn btn-secondary col" onClick={() => { setActiveModal(null); setEditingVehicle(null); }}>İptal</button>
-                                        <button type="submit" className="btn btn-primary col">Güncelle</button>
-                                    </div>
-                                </form>
-                            </Modal>
-                        )}
+                        {
+                            activeModal === 'editVehicle' && editingVehicle && (
+                                <Modal title="Araç Düzenle" onClose={() => { setActiveModal(null); setEditingVehicle(null); }}>
+                                    <form onSubmit={(e) => { e.preventDefault(); updateVehicle({ ...editingVehicle, ...Object.fromEntries(new FormData(e.target)) }); }}>
+                                        <div className="row">
+                                            <div className="col form-group"><label className="form-label">Plaka</label><input name="plaka" required defaultValue={editingVehicle.plaka} /></div>
+                                            <div className="col form-group"><label className="form-label">Kullanan Kişi</label><input name="driver" defaultValue={editingVehicle.driver} /></div>
+                                        </div>
+                                        <div className="row">
+                                            <div className="col form-group"><label className="form-label">Marka</label><input name="marka" required defaultValue={editingVehicle.marka} /></div>
+                                            <div className="col form-group"><label className="form-label">Model</label><input name="model" required defaultValue={editingVehicle.model} /></div>
+                                        </div>
+                                        <div className="row">
+                                            <div className="col form-group"><label className="form-label">Yıl</label><input name="yil" type="number" required defaultValue={editingVehicle.yil} /></div>
+                                            <div className="col form-group"><label className="form-label">Renk</label><input name="renk" defaultValue={editingVehicle.renk} /></div>
+                                        </div>
+                                        <div className="row" style={{ marginTop: '20px' }}>
+                                            <button type="button" className="btn btn-secondary col" onClick={() => { setActiveModal(null); setEditingVehicle(null); }}>İptal</button>
+                                            <button type="submit" className="btn btn-primary col">Güncelle</button>
+                                        </div>
+                                    </form>
+                                </Modal>
+                            )
+                        }
 
-                        {activeModal === 'expense' && (
-                            <Modal title={isViewMode ? "Harcama Detayı" : (editingExpense ? "Harcama Düzenle" : "Harcama Ekle")} onClose={() => { setActiveModal(null); setEditingExpense(null); setIsViewMode(false); }}>
-                                <ExpenseForm
-                                    key={editingExpense ? editingExpense.id : 'new'}
-                                    vehicles={vehicles}
-                                    onSubmit={editingExpense ? (data) => updateExpense({ ...data, id: editingExpense.id }) : addExpense}
-                                    onCancel={() => { setActiveModal(null); setEditingExpense(null); setIsViewMode(false); }}
-                                    initialVehicleId={selectedVehicleId}
-                                    initialData={editingExpense}
-                                    readOnly={isViewMode}
-                                />
-                            </Modal>
-                        )}
+                        {
+                            activeModal === 'expense' && (
+                                <Modal title={isViewMode ? "Harcama Detayı" : (editingExpense ? "Harcama Düzenle" : "Harcama Ekle")} onClose={() => { setActiveModal(null); setEditingExpense(null); setIsViewMode(false); }}>
+                                    <ExpenseForm
+                                        key={editingExpense ? editingExpense.id : 'new'}
+                                        vehicles={vehicles}
+                                        onSubmit={editingExpense ? (data) => updateExpense({ ...data, id: editingExpense.id }) : addExpense}
+                                        onCancel={() => { setActiveModal(null); setEditingExpense(null); setIsViewMode(false); }}
+                                        initialVehicleId={selectedVehicleId}
+                                        initialData={editingExpense}
+                                        readOnly={isViewMode}
+                                    />
+                                </Modal>
+                            )
+                        }
 
-                        {activeModal === 'settings' && (
-                            <Modal title="Ayarlar" onClose={() => setActiveModal(null)}>
-                                <div className="form-group">
-                                    <label className="form-label">E-posta Adresi</label>
-                                    <input value={settings.email} onChange={e => setSettings({ ...settings, email: e.target.value })} />
-                                </div>
-                                <div className="form-group">
-                                    <label className="form-label">EmailJS Service ID</label>
-                                    <input value={settings.emailJsServiceId} onChange={e => setSettings({ ...settings, emailJsServiceId: e.target.value })} />
-                                </div>
-                                <div className="form-group">
-                                    <label className="form-label">EmailJS Pub Key</label>
-                                    <input value={settings.emailJsPublicKey} onChange={e => setSettings({ ...settings, emailJsPublicKey: e.target.value })} />
-                                </div>
-                                <div className="form-group" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                    <input type="checkbox" style={{ width: 'auto' }} checked={settings.notifications} onChange={e => setSettings({ ...settings, notifications: e.target.checked })} />
-                                    <label>Browser Bildirimleri</label>
-                                </div>
-                                <hr style={{ borderColor: 'var(--glass-border)', margin: '20px 0' }} />
-                                <div style={{ display: 'flex', gap: '10px' }}>
-                                    <button className="btn btn-secondary" style={{ flex: 1 }} onClick={exportData}><Icon name="download" /> Veri İndir (Yedek)</button>
-                                    <label className="btn btn-primary" style={{ flex: 1, cursor: 'pointer', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '5px' }}>
-                                        <Icon name="file" /> Veri Yükle (Geri Getir)
-                                        <input type="file" accept=".json" hidden onChange={importData} />
-                                    </label>
-                                </div>
-                                <hr style={{ borderColor: 'var(--glass-border)', margin: '20px 0' }} />
-                                <h4 style={{ marginBottom: '10px', color: 'var(--primary)' }}>Bulut Senkronizasyon (Elle)</h4>
-                                <div style={{ display: 'flex', gap: '10px' }}>
-                                    <button className="btn btn-primary" style={{ flex: 1, backgroundColor: '#f59e0b' }} onClick={forcePushToCloud}>
-                                        ☁️⬆️ Buluta GÖNDER (Buradakini Kaydet)
-                                    </button>
-                                    <button className="btn btn-primary" style={{ flex: 1, backgroundColor: '#3b82f6' }} onClick={forcePullFromCloud}>
-                                        ☁️⬇️ Buluttan ÇEK (Orayı İndir)
-                                    </button>
-                                </div>
-                            </Modal>
-                        )}
+                        {
+                            activeModal === 'settings' && (
+                                <Modal title="Ayarlar" onClose={() => setActiveModal(null)}>
+                                    <div className="form-group">
+                                        <label className="form-label">E-posta Adresi</label>
+                                        <input value={settings.email} onChange={e => setSettings({ ...settings, email: e.target.value })} />
+                                    </div>
+                                    <div className="form-group">
+                                        <label className="form-label">EmailJS Service ID</label>
+                                        <input value={settings.emailJsServiceId} onChange={e => setSettings({ ...settings, emailJsServiceId: e.target.value })} />
+                                    </div>
+                                    <div className="form-group">
+                                        <label className="form-label">EmailJS Pub Key</label>
+                                        <input value={settings.emailJsPublicKey} onChange={e => setSettings({ ...settings, emailJsPublicKey: e.target.value })} />
+                                    </div>
+                                    <div className="form-group" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                        <input type="checkbox" style={{ width: 'auto' }} checked={settings.notifications} onChange={e => setSettings({ ...settings, notifications: e.target.checked })} />
+                                        <label>Browser Bildirimleri</label>
+                                    </div>
+                                    <hr style={{ borderColor: 'var(--glass-border)', margin: '20px 0' }} />
+                                    <div style={{ display: 'flex', gap: '10px' }}>
+                                        <button className="btn btn-secondary" style={{ flex: 1 }} onClick={exportData}><Icon name="download" /> Veri İndir (Yedek)</button>
+                                        <label className="btn btn-primary" style={{ flex: 1, cursor: 'pointer', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '5px' }}>
+                                            <Icon name="file" /> Veri Yükle (Geri Getir)
+                                            <input type="file" accept=".json" hidden onChange={importData} />
+                                        </label>
+                                    </div>
+                                    <hr style={{ borderColor: 'var(--glass-border)', margin: '20px 0' }} />
+                                    <h4 style={{ marginBottom: '10px', color: 'var(--primary)' }}>Bulut Senkronizasyon (Elle)</h4>
+                                    <div style={{ display: 'flex', gap: '10px' }}>
+                                        <button className="btn btn-primary" style={{ flex: 1, backgroundColor: '#f59e0b' }} onClick={forcePushToCloud}>
+                                            ☁️⬆️ Buluta GÖNDER (Buradakini Kaydet)
+                                        </button>
+                                        <button className="btn btn-primary" style={{ flex: 1, backgroundColor: '#3b82f6' }} onClick={forcePullFromCloud}>
+                                            ☁️⬇️ Buluttan ÇEK (Orayı İndir)
+                                        </button>
+                                    </div>
+                                </Modal>
+                            )
+                        }
 
-                        {activeModal === 'allAppointments' && (
-                            <Modal title="Tüm Yaklaşan Randevular" onClose={() => setActiveModal(null)}>
-                                <div style={{ maxHeight: '60vh', overflowY: 'auto' }}>
-                                    {appointments
-                                        .filter(a => new Date(a.tarih) >= new Date().setHours(0, 0, 0, 0))
-                                        .sort((a, b) => new Date(a.tarih) - new Date(b.tarih))
-                                        .length === 0 ? (
-                                        <div className="text-center p-4 text-muted">Gelecek randevu bulunmuyor.</div>
-                                    ) : (
-                                        appointments
+                        {
+                            activeModal === 'allAppointments' && (
+                                <Modal title="Tüm Yaklaşan Randevular" onClose={() => setActiveModal(null)}>
+                                    <div style={{ maxHeight: '60vh', overflowY: 'auto' }}>
+                                        {appointments
                                             .filter(a => new Date(a.tarih) >= new Date().setHours(0, 0, 0, 0))
                                             .sort((a, b) => new Date(a.tarih) - new Date(b.tarih))
-                                            .map(a => {
-                                                const v = vehicles.find(v => v.id === a.vehicleId);
-                                                return (
-                                                    <div key={a.id} className="list-item">
-                                                        <div style={{ flex: 1 }}>
-                                                            <div style={{ fontWeight: 600 }}>{formatDate(a.tarih)} - {a.saat}</div>
-                                                            <div style={{ color: 'var(--primary)', fontWeight: 'bold' }}>{v ? v.plaka : 'Bilinmeyen Araç'}</div>
-                                                            <div>{a.aciklama}</div>
+                                            .length === 0 ? (
+                                            <div className="text-center p-4 text-muted">Gelecek randevu bulunmuyor.</div>
+                                        ) : (
+                                            appointments
+                                                .filter(a => new Date(a.tarih) >= new Date().setHours(0, 0, 0, 0))
+                                                .sort((a, b) => new Date(a.tarih) - new Date(b.tarih))
+                                                .map(a => {
+                                                    const v = vehicles.find(v => v.id === a.vehicleId);
+                                                    return (
+                                                        <div key={a.id} className="list-item">
+                                                            <div style={{ flex: 1 }}>
+                                                                <div style={{ fontWeight: 600 }}>{formatDate(a.tarih)} - {a.saat}</div>
+                                                                <div style={{ color: 'var(--primary)', fontWeight: 'bold' }}>{v ? v.plaka : 'Bilinmeyen Araç'}</div>
+                                                                <div>{a.aciklama}</div>
+                                                            </div>
+                                                            <button className="btn btn-secondary" style={{ padding: '5px', color: '#ef4444', borderColor: '#ef4444' }} onClick={() => deleteAppointment(a.id)}><Icon name="trash" size={14} /></button>
                                                         </div>
-                                                        <button className="btn btn-secondary" style={{ padding: '5px', color: '#ef4444', borderColor: '#ef4444' }} onClick={() => deleteAppointment(a.id)}><Icon name="trash" size={14} /></button>
-                                                    </div>
-                                                );
-                                            })
-                                    )}
-                                </div>
-                            </Modal>
-                        )}
+                                                    );
+                                                })
+                                        )}
+                                    </div>
+                                </Modal>
+                            )
+                        }
 
-                        {activeModal === 'reports' && (
-                            <ReportsModal vehicles={vehicles} expenses={expenses} onClose={() => setActiveModal(null)} />
-                        )}
+                        {
+                            activeModal === 'reports' && (
+                                <ReportsModal vehicles={vehicles} expenses={expenses} onClose={() => setActiveModal(null)} />
+                            )
+                        }
 
-                        {activeModal === 'vehicleDetail' && selectedVehicleId && (
-                            <VehicleDetailModal
-                                vehicle={vehicles.find(v => v.id === selectedVehicleId)}
-                                expenses={expenses.filter(e => e.vehicleId === selectedVehicleId)}
-                                appointments={appointments.filter(a => a.vehicleId === selectedVehicleId)}
-                                documents={documents.filter(d => d.vehicleId === selectedVehicleId)}
-                                onClose={() => { setActiveModal(null); setSelectedVehicleId(null); }}
-                                onAddAppointment={(apt) => addAppointment({ ...apt, vehicleId: selectedVehicleId })}
-                                onAddExpense={() => { setActiveModal('expense'); /* keeps selectedVehicleId */ }}
-                                /* Pass new handlers */
-                                onEdit={(v) => { setEditingVehicle(v); setActiveModal('editVehicle'); }}
-                                onDelete={(id) => { deleteVehicle(id); setActiveModal(null); }}
-                                onFileUpload={(file) => handleFileUpload(selectedVehicleId, file)}
-                                onWebcamOpen={() => setActiveModal('webcam')}
-                                onDeleteExpense={deleteExpense}
-                                onDeleteAppointment={deleteAppointment}
-                                onEditExpense={(e) => { setEditingExpense(e); setIsViewMode(false); setActiveModal('expense'); }}
-                                onViewExpense={(e) => {
-                                    if (e.dokuman) {
-                                        setViewingDocument(e.dokuman);
-                                    } else {
-                                        setViewingExpenseDetails(e);
-                                    }
-                                }}
-                            />
-                        )}
+                        {
+                            activeModal === 'vehicleDetail' && selectedVehicleId && (
+                                <VehicleDetailModal
+                                    vehicle={vehicles.find(v => v.id === selectedVehicleId)}
+                                    expenses={expenses.filter(e => e.vehicleId === selectedVehicleId)}
+                                    appointments={appointments.filter(a => a.vehicleId === selectedVehicleId)}
+                                    documents={documents.filter(d => d.vehicleId === selectedVehicleId)}
+                                    onClose={() => { setActiveModal(null); setSelectedVehicleId(null); }}
+                                    onAddAppointment={(apt) => addAppointment({ ...apt, vehicleId: selectedVehicleId })}
+                                    onAddExpense={() => { setActiveModal('expense'); /* keeps selectedVehicleId */ }}
+                                    /* Pass new handlers */
+                                    onEdit={(v) => { setEditingVehicle(v); setActiveModal('editVehicle'); }}
+                                    onDelete={(id) => { deleteVehicle(id); setActiveModal(null); }}
+                                    onFileUpload={(file) => handleFileUpload(selectedVehicleId, file)}
+                                    onWebcamOpen={() => setActiveModal('webcam')}
+                                    onDeleteExpense={deleteExpense}
+                                    onDeleteAppointment={deleteAppointment}
+                                    onEditExpense={(e) => { setEditingExpense(e); setIsViewMode(false); setActiveModal('expense'); }}
+                                    onViewExpense={(e) => {
+                                        if (e.dokuman) {
+                                            setViewingDocument(e.dokuman);
+                                        } else {
+                                            setViewingExpenseDetails(e);
+                                        }
+                                    }}
+                                />
+                            )
+                        }
 
-                        {activeModal === 'webcam' && (
-                            <WebcamModal
-                                onCapture={(dataUrl) => handleWebcamCapture(selectedVehicleId, dataUrl)}
-                                onClose={() => setActiveModal(null)}
-                            />
-                        )}
+                        {
+                            activeModal === 'webcam' && (
+                                <WebcamModal
+                                    onCapture={(dataUrl) => handleWebcamCapture(selectedVehicleId, dataUrl)}
+                                    onClose={() => setActiveModal(null)}
+                                />
+                            )
+                        }
 
-                        {viewingDocument && (
-                            <ImageViewerModal
-                                src={viewingDocument}
-                                onClose={() => setViewingDocument(null)}
-                            />
-                        )}
+                        {
+                            viewingDocument && (
+                                <ImageViewerModal
+                                    src={viewingDocument}
+                                    onClose={() => setViewingDocument(null)}
+                                />
+                            )
+                        }
 
-                        {viewingExpenseDetails && (
-                            <ExpenseDetailsModal
-                                expense={viewingExpenseDetails}
-                                onClose={() => setViewingExpenseDetails(null)}
-                            />
-                        )}
-                    </div>
+                        {
+                            viewingExpenseDetails && (
+                                <ExpenseDetailsModal
+                                    expense={viewingExpenseDetails}
+                                    onClose={() => setViewingExpenseDetails(null)}
+                                />
+                            )
+                        }
+                    </div >
                 );
             };
 
