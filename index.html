@@ -2106,8 +2106,9 @@
                     }).join("\n");
 
                     // Append Total Row
-                    // Format: ;;GENEL TOPLAM;TotalAmount;
-                    const totalRow = `\n;;GENEL TOPLAM;${totalAmount};`;
+                    // Format: ;;GENEL TOPLAM;33.176,00 ₺;
+                    const formattedTotal = totalAmount.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' ₺';
+                    const totalRow = `\n;;GENEL TOPLAM;${formattedTotal};`;
 
                     const blob = new Blob(["\ufeff" + headers + rows + totalRow], { type: 'text/csv;charset=utf-8;' });
                     const url = URL.createObjectURL(blob);
