@@ -2067,7 +2067,19 @@
                         const d = new Date(e.tarih);
                         let dateMatch = true;
                         if (mode === 'monthly') {
-                            dateMatch = d.getFullYear() === Number(year) && d.getMonth() === Number(month);
+                            const y = Number(year);
+                            const m = Number(month);
+
+                            if (y === -1) {
+                                // All Years selected -> Show everything (date-wise)
+                                dateMatch = true;
+                            } else {
+                                // Specific Year selected
+                                const yearMatch = d.getFullYear() === y;
+                                // If Month is -1 (All Months), accept any month in that year. Else check specific month.
+                                const monthMatch = m === -1 || d.getMonth() === m;
+                                dateMatch = yearMatch && monthMatch;
+                            }
                         } else {
                             if (startDate && new Date(startDate) > d) dateMatch = false;
                             if (endDate && new Date(endDate) < d) dateMatch = false;
@@ -2108,7 +2120,7 @@
                         {/* Filters */}
                         <div style={{ background: 'rgba(255,255,255,0.05)', padding: '15px', borderRadius: '8px', marginBottom: '20px' }}>
                             <div className="tabs" style={{ marginBottom: '15px' }}>
-                                <div className={`tab ${mode === 'monthly' ? 'active' : ''}`} onClick={() => setMode('monthly')}>Aylık</div>
+                                <div className={`tab ${mode === 'monthly' ? 'active' : ''}`} onClick={() => setMode('monthly')}>Aylık / Yıllık</div>
                                 <div className={`tab ${mode === 'range' ? 'active' : ''}`} onClick={() => setMode('range')}>Tarih Aralığı</div>
                             </div>
 
@@ -2117,11 +2129,13 @@
                                     <>
                                         <div className="col">
                                             <select value={year} onChange={e => setYear(e.target.value)}>
+                                                <option value="-1">Tüm Yıllar</option>
                                                 {years.map(y => <option key={y} value={y}>{y}</option>)}
                                             </select>
                                         </div>
                                         <div className="col">
-                                            <select value={month} onChange={e => setMonth(e.target.value)}>
+                                            <select value={month} onChange={e => setMonth(e.target.value)} disabled={Number(year) === -1}>
+                                                <option value="-1">Tüm Aylar</option>
                                                 {months.map((m, i) => <option key={i} value={i}>{m}</option>)}
                                             </select>
                                         </div>
