@@ -2104,7 +2104,12 @@
                         const plate = v ? v.plaka : 'Bilinmiyor';
                         return `${e.tarih};${plate};${e.kategori};${e.tutar};${e.aciklama || ''}`;
                     }).join("\n");
-                    const blob = new Blob(["\ufeff" + headers + rows], { type: 'text/csv;charset=utf-8;' });
+
+                    // Append Total Row
+                    // Format: ;;GENEL TOPLAM;TotalAmount;
+                    const totalRow = `\n;;GENEL TOPLAM;${totalAmount};`;
+
+                    const blob = new Blob(["\ufeff" + headers + rows + totalRow], { type: 'text/csv;charset=utf-8;' });
                     const url = URL.createObjectURL(blob);
                     const link = document.createElement("a");
                     link.href = url;
