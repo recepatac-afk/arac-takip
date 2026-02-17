@@ -580,7 +580,8 @@
                 const [viewingDocument, setViewingDocument] = useState(null);
                 const [viewingExpenseDetails, setViewingExpenseDetails] = useState(null);
                 const [menuOpenId, setMenuOpenId] = useState(null);
-                const [backendStatus, setBackendStatus] = useState('unknown');
+                const [editingVehicleId, setEditingVehicleId] = useState(null);
+                const [quickEditType, setQuickEditType] = useState(null); // 'egzoz' or 'muayene'
 
                 // ... (state definitions)
 
@@ -747,6 +748,28 @@
 
                 const addAppointment = (appointment) => {
                     setAppointments([...appointments, { ...appointment, id: generateId() }]);
+
+                    // Auto-Update Vehicle Inspection Dates
+                    if (appointment.vehicleId) {
+                        const v = vehicles.find(x => x.id === appointment.vehicleId);
+                        if (v) {
+                            let updatedV = { ...v };
+                            let changed = false;
+                            if (appointment.type === 'Egzos Muayene') {
+                                updatedV.egzozTarih = appointment.tarih;
+                                changed = true;
+                            } else if (appointment.type === 'Genel Muayene') {
+                                updatedV.muayeneTarih = appointment.tarih;
+                                changed = true;
+                            }
+                            if (changed) {
+                                setVehicles(vehicles.map(curr => curr.id === v.id ? updatedV : curr));
+                                // Alert user visually
+                                alert("Randevu tarihi, aracın muayene tarihi olarak da güncellendi! ✅");
+                            }
+                        }
+                    }
+
                     // Trigger Notification Logic Here
                     if (settings.notifications && 'Notification' in window) {
                         Notification.requestPermission().then(perm => {
@@ -1155,7 +1178,11 @@
                                                 if (days < 0) color = '#ef4444'; // Red
                                                 else if (days < 30) color = '#f59e0b'; // Yellow
                                                 return (
-                                                    <div style={{ display: 'flex', justifyContent: 'space-between', padding: '10px', borderRadius: '8px', background: 'rgba(0,0,0,0.3)', borderLeft: `4px solid ${color}` }}>
+                                                    <div
+                                                        onClick={(e) => { e.stopPropagation(); setEditingVehicleId(v.id); setQuickEditType('egzoz'); setActiveModal('quickDateEdit'); }}
+                                                        style={{ display: 'flex', justifyContent: 'space-between', padding: '10px', borderRadius: '8px', background: 'rgba(0,0,0,0.3)', borderLeft: `4px solid ${color}`, cursor: 'pointer' }}
+                                                        title="Tarihi güncellemek için tıkla"
+                                                    >
                                                         <span style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>Egzoz M.</span>
                                                         <span style={{ fontWeight: 'bold', color: color }}>
                                                             {formatDate(v.egzozTarih)} {days < 0 ? '(GEÇTİ)' : `(${days} gün)`}
@@ -1163,9 +1190,13 @@
                                                     </div>
                                                 );
                                             })() : (
-                                                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '10px', borderRadius: '8px', background: 'rgba(0,0,0,0.3)', borderLeft: '4px solid var(--text-muted)' }}>
+                                                <div
+                                                    onClick={(e) => { e.stopPropagation(); setEditingVehicleId(v.id); setQuickEditType('egzoz'); setActiveModal('quickDateEdit'); }}
+                                                    style={{ display: 'flex', justifyContent: 'space-between', padding: '10px', borderRadius: '8px', background: 'rgba(0,0,0,0.3)', borderLeft: '4px solid var(--text-muted)', cursor: 'pointer' }}
+                                                    title="Tarih eklemek için tıkla"
+                                                >
                                                     <span style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>Egzoz M.</span>
-                                                    <span style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>Girilmedi</span>
+                                                    <span style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>Tarih Gir</span>
                                                 </div>
                                             )}
 
@@ -1177,7 +1208,11 @@
                                                 if (days < 0) color = '#ef4444'; // Red
                                                 else if (days < 30) color = '#f59e0b'; // Yellow
                                                 return (
-                                                    <div style={{ display: 'flex', justifyContent: 'space-between', padding: '10px', borderRadius: '8px', background: 'rgba(0,0,0,0.3)', borderLeft: `4px solid ${color}` }}>
+                                                    <div
+                                                        onClick={(e) => { e.stopPropagation(); setEditingVehicleId(v.id); setQuickEditType('muayene'); setActiveModal('quickDateEdit'); }}
+                                                        style={{ display: 'flex', justifyContent: 'space-between', padding: '10px', borderRadius: '8px', background: 'rgba(0,0,0,0.3)', borderLeft: `4px solid ${color}`, cursor: 'pointer' }}
+                                                        title="Tarihi güncellemek için tıkla"
+                                                    >
                                                         <span style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>Genel M.</span>
                                                         <span style={{ fontWeight: 'bold', color: color }}>
                                                             {formatDate(v.muayeneTarih)} {days < 0 ? '(GEÇTİ)' : `(${days} gün)`}
@@ -1185,9 +1220,13 @@
                                                     </div>
                                                 );
                                             })() : (
-                                                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '10px', borderRadius: '8px', background: 'rgba(0,0,0,0.3)', borderLeft: '4px solid var(--text-muted)' }}>
+                                                <div
+                                                    onClick={(e) => { e.stopPropagation(); setEditingVehicleId(v.id); setQuickEditType('muayene'); setActiveModal('quickDateEdit'); }}
+                                                    style={{ display: 'flex', justifyContent: 'space-between', padding: '10px', borderRadius: '8px', background: 'rgba(0,0,0,0.3)', borderLeft: '4px solid var(--text-muted)', cursor: 'pointer' }}
+                                                    title="Tarih eklemek için tıkla"
+                                                >
                                                     <span style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>Genel M.</span>
-                                                    <span style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>Girilmedi</span>
+                                                    <span style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>Tarih Gir</span>
                                                 </div>
                                             )}
                                         </div>
@@ -1389,6 +1428,47 @@
                                     onCapture={(dataUrl) => handleWebcamCapture(selectedVehicleId, dataUrl)}
                                     onClose={() => setActiveModal(null)}
                                 />
+                            )
+                        }
+
+                        {
+                            activeModal === 'quickDateEdit' && editingVehicleId && quickEditType && (
+                                <Modal
+                                    title={quickEditType === 'egzoz' ? "Egzoz Muayene Tarihi Güncelle" : "Genel Muayene Tarihi Güncelle"}
+                                    onClose={() => { setActiveModal(null); setEditingVehicleId(null); setQuickEditType(null); }}
+                                >
+                                    <form onSubmit={(e) => {
+                                        e.preventDefault();
+                                        const newDate = e.target.date.value;
+                                        if (newDate) {
+                                            const v = vehicles.find(v => v.id === editingVehicleId);
+                                            if (v) {
+                                                const updatedV = { ...v, [quickEditType === 'egzoz' ? 'egzozTarih' : 'muayeneTarih']: newDate };
+                                                updateVehicle(updatedV);
+                                                alert("Tarih güncellendi! ✅");
+                                            }
+                                        }
+                                    }}>
+                                        <div className="form-group">
+                                            <label className="form-label">Yeni Tarih</label>
+                                            <input
+                                                name="date"
+                                                type="date"
+                                                defaultValue={(() => {
+                                                    const v = vehicles.find(v => v.id === editingVehicleId);
+                                                    if (!v) return '';
+                                                    return quickEditType === 'egzoz' ? v.egzozTarih : v.muayeneTarih;
+                                                })()}
+                                                required
+                                                autoFocus
+                                            />
+                                        </div>
+                                        <div className="row" style={{ marginTop: '20px' }}>
+                                            <button type="button" className="btn btn-secondary col" onClick={() => { setActiveModal(null); setEditingVehicleId(null); setQuickEditType(null); }}>İptal</button>
+                                            <button type="submit" className="btn btn-primary col">Kaydet</button>
+                                        </div>
+                                    </form>
+                                </Modal>
                             )
                         }
 
