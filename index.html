@@ -1176,8 +1176,9 @@
                                                 const diff = new Date(v.egzozTarih) - new Date();
                                                 const days = Math.ceil(diff / (1000 * 60 * 60 * 24));
                                                 let color = '#10b981'; // Green
-                                                if (days < 0) color = '#ef4444'; // Red
-                                                else if (days < 30) color = '#f59e0b'; // Yellow
+                                                if (days <= 7) color = '#ef4444'; // Red (7 days or passed)
+                                                else if (days <= 30) color = '#f59e0b'; // Yellow (1 month)
+
                                                 return (
                                                     <div
                                                         onClick={(e) => { e.stopPropagation(); setEditingVehicleId(v.id); setQuickEditType('egzoz'); setActiveModal('quickDateEdit'); }}
@@ -1206,8 +1207,9 @@
                                                 const diff = new Date(v.muayeneTarih) - new Date();
                                                 const days = Math.ceil(diff / (1000 * 60 * 60 * 24));
                                                 let color = '#10b981'; // Green
-                                                if (days < 0) color = '#ef4444'; // Red
-                                                else if (days < 30) color = '#f59e0b'; // Yellow
+                                                if (days <= 7) color = '#ef4444'; // Red (7 days or passed)
+                                                else if (days <= 30) color = '#f59e0b'; // Yellow (1 month)
+
                                                 return (
                                                     <div
                                                         onClick={(e) => { e.stopPropagation(); setEditingVehicleId(v.id); setQuickEditType('muayene'); setActiveModal('quickDateEdit'); }}
@@ -1464,8 +1466,19 @@
                                                 autoFocus
                                             />
                                         </div>
-                                        <div className="row" style={{ marginTop: '20px' }}>
+                                        <div className="row" style={{ marginTop: '20px', gap: '10px' }}>
                                             <button type="button" className="btn btn-secondary col" onClick={() => { setActiveModal(null); setEditingVehicleId(null); setQuickEditType(null); }}>İptal</button>
+                                            <button type="button" className="btn btn-danger col" onClick={() => {
+                                                const v = vehicles.find(v => v.id === editingVehicleId);
+                                                if (v) {
+                                                    if (confirm("Tarihi silmek istediğinize emin misiniz?")) {
+                                                        const updatedV = { ...v, [quickEditType === 'egzoz' ? 'egzozTarih' : 'muayeneTarih']: null };
+                                                        updateVehicle(updatedV);
+                                                        alert("Tarih silindi! 🗑️");
+                                                        setActiveModal(null); setEditingVehicleId(null); setQuickEditType(null);
+                                                    }
+                                                }
+                                            }}>Sil</button>
                                             <button type="submit" className="btn btn-primary col">Kaydet</button>
                                         </div>
                                     </form>
