@@ -1027,11 +1027,16 @@
                             </div>
                         </div>
 
+
                         {/* STATS */}
                         <div className="stats-grid">
                             <div className="glass-panel stat-card">
-                                <span className="stat-label">Toplam Araç</span>
-                                <span className="stat-value">{vehicles.length}</span>
+                                <span className="stat-label">Aktif Araçlar</span>
+                                <span className="stat-value">{vehicles.filter(v => v.status !== 'sold').length}</span>
+                            </div>
+                            <div className="glass-panel stat-card" style={{ cursor: 'pointer', border: '1px solid rgba(239, 68, 68, 0.3)' }} onClick={() => setActiveModal('soldVehicles')}>
+                                <span className="stat-label">Satılan Araçlar</span>
+                                <span className="stat-value" style={{ color: '#ef4444' }}>{vehicles.filter(v => v.status === 'sold').length}</span>
                             </div>
                             <div className="glass-panel stat-card">
                                 <span className="stat-label">Bu Ay Harcama</span>
@@ -1092,7 +1097,7 @@
                             <Icon name="car" /> Filo Durumu
                         </h2>
                         <div className="vehicles-grid">
-                            {vehicles.map((v, index) => {
+                            {vehicles.filter(v => v.status !== 'sold').map((v, index) => {
                                 const color = VEHICLE_COLORS[index % VEHICLE_COLORS.length];
                                 const vExpenses = expenses.filter(e => e.vehicleId === v.id);
                                 const thisMonthExp = vExpenses.filter(e => new Date(e.tarih).getMonth() === new Date().getMonth()).reduce((a, c) => a + Number(c.tutar), 0);
@@ -1140,6 +1145,9 @@
                                                     <Icon name="plus" size={14} />
                                                 </button>
                                                 <button className="btn btn-secondary" style={{ padding: '5px' }} onClick={() => deleteVehicle(v.id)}><Icon name="trash" size={14} /></button>
+                                                <button className="btn btn-secondary" style={{ padding: '5px', borderColor: '#ef4444', color: '#ef4444' }} onClick={(e) => { e.stopPropagation(); setEditingVehicleId(v.id); setActiveModal('sellVehicle'); }}>
+                                                    <Icon name="creditCard" size={14} />
+                                                </button>
 
                                                 {/* Dropdown Menu */}
                                                 {menuOpenId === v.id && (
@@ -1501,6 +1509,81 @@
                                     expense={viewingExpenseDetails}
                                     onClose={() => setViewingExpenseDetails(null)}
                                 />
+                            )
+                        }
+
+                        {
+                            activeModal === 'sellVehicle' && editingVehicleId && (
+                                <Modal title="Araç Satışı" onClose={() => { setActiveModal(null); setEditingVehicleId(null); }}>
+                                    <form onSubmit={(e) => {
+                                        e.preventDefault();
+                                        const formData = new FormData(e.target);
+                                        const saleData = Object.fromEntries(formData);
+                                        const v = vehicles.find(v => v.id === editingVehicleId);
+                                        if (v) {
+                                            const updatedV = {
+                                                ...v,
+                                                status: 'sold',
+                                                saleDetails: {
+                                                    date: saleData.date,
+                                                    buyer: saleData.buyer,
+                                                    price: saleData.price,
+                                                    km: saleData.km
+                                                }
+                                            };
+                                            updateVehicle(updatedV);
+                                            alert("Araç satışı gerçekleşti! Hayırlı olsun. 🤝");
+                                            setActiveModal(null);
+                                            setEditingVehicleId(null);
+                                        }
+                                    }}>
+                                        <div className="form-group"><label className="form-label">Satış Tarihi</label><input type="date" name="date" required defaultValue={new Date().toISOString().split('T')[0]} /></div>
+                                        <div className="form-group"><label className="form-label">Kime Satıldı</label><input type="text" name="buyer" required placeholder="Alıcı Adı Soyadı / Firma" /></div>
+                                        <div className="form-group"><label className="form-label">Satış Fiyatı (TL)</label><input type="number" name="price" required placeholder="0.00" /></div>
+                                        <div className="form-group"><label className="form-label">Satış Kilometresi</label><input type="number" name="km" required placeholder="KM" /></div>
+
+                                        <div className="row" style={{ marginTop: '20px' }}>
+                                            <button type="button" className="btn btn-secondary col" onClick={() => { setActiveModal(null); setEditingVehicleId(null); }}>İptal</button>
+                                            <button type="submit" className="btn btn-primary col" style={{ background: '#ef4444', borderColor: '#ef4444' }}>Satışı Tamamla</button>
+                                        </div>
+                                    </form>
+                                </Modal>
+                            )
+                        }
+
+                        {
+                            activeModal === 'soldVehicles' && (
+                                <Modal title="Satılan Araçlar Arşivi" onClose={() => setActiveModal(null)}>
+                                    <div style={{ maxHeight: '600px', overflowY: 'auto' }}>
+                                        {vehicles.filter(v => v.status === 'sold').length === 0 ? (
+                                            <div className="text-muted text-center p-4">Satılan araç bulunmamaktadır.</div>
+                                        ) : (
+                                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '20px' }}>
+                                                {vehicles.filter(v => v.status === 'sold').map(v => (
+                                                    <div key={v.id} className="glass-panel" style={{ position: 'relative', border: '1px solid rgba(239, 68, 68, 0.3)', background: 'rgba(239, 68, 68, 0.05)' }}>
+                                                        <div style={{ position: 'absolute', top: '10px', right: '10px', color: '#ef4444', fontWeight: '900', fontSize: '1.5rem', transform: 'rotate(-15deg)', opacity: 0.3, pointerEvents: 'none' }}>SATILDI</div>
+                                                        <div style={{ fontWeight: 'bold', fontSize: '1.2rem', marginBottom: '10px' }}>{v.plaka} - {v.brand} {v.model}</div>
+                                                        <div style={{ fontSize: '0.9rem', marginBottom: '15px' }}>
+                                                            <div><strong>Alıcı:</strong> {v.saleDetails?.buyer}</div>
+                                                            <div><strong>Tarih:</strong> {formatDate(v.saleDetails?.date)}</div>
+                                                            <div><strong>Fiyat:</strong> {formatCurrency(v.saleDetails?.price)}</div>
+                                                            <div><strong>KM:</strong> {v.saleDetails?.km}</div>
+                                                        </div>
+                                                        <div style={{ display: 'flex', gap: '10px' }}>
+                                                            <button className="btn btn-secondary" style={{ flex: 1 }} onClick={() => {
+                                                                if (confirm("Satış işlemini geri almak istediğinize emin misiniz? Araç tekrar aktif listeye dönecek.")) {
+                                                                    const updatedV = { ...v, status: 'active', saleDetails: null };
+                                                                    updateVehicle(updatedV);
+                                                                }
+                                                            }}>↩️ Geri Al</button>
+                                                            <button className="btn btn-secondary" style={{ flex: 1, color: '#ef4444', borderColor: '#ef4444' }} onClick={() => deleteVehicle(v.id)}>🗑️ Sil</button>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
+                                </Modal>
                             )
                         }
                     </div >
