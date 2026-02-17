@@ -1241,10 +1241,16 @@
                                                 </div>
                                             )}
                                         </div>
-                                        <button className="btn btn-primary" style={{ width: '100%', justifyContent: 'center', background: `linear-gradient(135deg, ${color}, ${color}dd)`, border: 'none' }}
-                                            onClick={() => { setSelectedVehicleId(v.id); setActiveModal('vehicleDetail'); }}>
-                                            Detay Gör
-                                        </button>
+                                        <div style={{ display: 'flex', gap: '10px' }}>
+                                            <button className="btn btn-primary" style={{ flex: 2, justifyContent: 'center', background: `linear-gradient(135deg, ${color}, ${color}dd)`, border: 'none' }}
+                                                onClick={() => { setSelectedVehicleId(v.id); setActiveModal('vehicleDetail'); }}>
+                                                Detay Gör
+                                            </button>
+                                            <button className="btn btn-secondary" style={{ flex: 1, borderColor: '#ef4444', color: '#ef4444', justifyContent: 'center' }}
+                                                onClick={(e) => { e.stopPropagation(); setEditingVehicleId(v.id); setActiveModal('sellVehicle'); }}>
+                                                SAT
+                                            </button>
+                                        </div>
                                     </div>
                                 )
                             })}
@@ -1429,6 +1435,7 @@
                                             setViewingExpenseDetails(e);
                                         }
                                     }}
+                                    onSell={() => { setActiveModal(null); setEditingVehicleId(selectedVehicleId); setActiveModal('sellVehicle'); }}
                                 />
                             )
                         }
@@ -2075,7 +2082,7 @@
                 );
             };
 
-            const VehicleDetailModal = ({ vehicle, expenses, appointments, documents, onClose, onAddAppointment, onAddExpense, onEdit, onDelete, onFileUpload, onWebcamOpen, onDeleteExpense, onDeleteAppointment, onEditExpense, onViewExpense }) => {
+            const VehicleDetailModal = ({ vehicle, expenses, appointments, documents, onClose, onAddAppointment, onAddExpense, onEdit, onDelete, onFileUpload, onWebcamOpen, onDeleteExpense, onDeleteAppointment, onEditExpense, onViewExpense, onSell }) => {
                 const [tab, setTab] = useState('harcamalar');
 
                 // CSV Export Helpers
@@ -2127,6 +2134,9 @@
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
                             <span>{vehicle.plaka} - {vehicle.driver}</span>
                             <div style={{ display: 'flex', gap: '10px' }}>
+                                <button className="btn btn-secondary" style={{ borderColor: '#ef4444', color: '#ef4444' }} onClick={onSell}>
+                                    <Icon name="creditCard" /> Aracı Sat
+                                </button>
                                 <button className="btn btn-secondary" onClick={() => onEdit(vehicle)}><Icon name="edit" /> Düzenle</button>
                                 <button className="btn btn-danger" onClick={() => onDelete(vehicle.id)}><Icon name="trash" /> Sil</button>
                             </div>

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'arac-takip-v4';
+const CACHE_NAME = 'arac-takip-v6';
 const urlsToCache = [
     './',
     './index.html',
