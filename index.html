@@ -824,16 +824,16 @@
                             appointments,
                             settings,
                             documents,
-                            updatedAt: new Date().toISOString() // Brand new timestamp
+                            updatedAt: new Date().toISOString()
                         };
                         try {
-                            const res = await fetch(API_URL, {
+                            const res = await fetch(PRODUCTION_API_URL, {
                                 method: 'POST',
                                 headers: { 'Content-Type': 'application/json' },
                                 body: JSON.stringify(data)
                             });
                             if (res.ok) {
-                                alert("Başarılı! Verileriniz buluta gönderildi. Diğer cihazlarda sayfayı yenileyince gelecek. 🟢");
+                                alert("Başarılı! Verileriniz GERÇEK BULUTA (Render.com) gönderildi. 🟢\nTelefondan sayfayı yenileyince veriler gelecektir.");
                                 setBackendStatus('connected');
                             } else {
                                 alert("Hata! Sunucu kabul etmedi. Kod: " + res.status);
@@ -845,25 +845,55 @@
                 };
 
                 const forcePullFromCloud = async () => {
-                    if (confirm("DİKKAT: Buluttaki veriler indirilip, şu anki ekranınızdaki verilerin üzerine yazılacak. Emin misiniz?")) {
-                        setBackendStatus('checking');
-                        try {
-                            const response = await fetch(API_URL);
-                            if (response.ok) {
-                                const cloudData = await response.json();
-                                setVehicles(cloudData.vehicles || []);
-                                setExpenses(cloudData.expenses || []);
-                                setAppointments(cloudData.appointments || []);
-                                setSettings(cloudData.settings || initialSettings);
-                                setDocuments(cloudData.documents || []);
-                                alert("Başarılı! Veriler buluttan çekildi. 🟢");
-                                setBackendStatus('connected');
+                    setBackendStatus('checking');
+                    try {
+                        const response = await fetch(PRODUCTION_API_URL);
+                        if (response.ok) {
+                            const cloudData = await response.json();
+
+                            // SAFETY CHECK 1: Compare Timestamps
+                            const localTime = new Date(settings.updatedAt || 0).getTime();
+                            const cloudTime = new Date(cloudData.updatedAt || 0).getTime();
+
+                            if (localTime > cloudTime) {
+                                const proceed = confirm(
+                                    `⚠️ DİKKAT: Bilgisayarınızdaki veriler Buluttakinden daha YENİ!\n\n` +
+                                    `Bilgisayar: ${new Date(localTime).toLocaleString()}\n` +
+                                    `Bulut: ${new Date(cloudTime).toLocaleString()}\n\n` +
+                                    `Eğer devam ederseniz, BİLGİSAYARDAKİ YENİ VERİLER SİLİNECEK ve eski veriler yüklenecektir.\n\n` +
+                                    `ÖNERİ: Önce 'İptal' diyip 'Buluta GÖNDER' yapın.\n\n` +
+                                    `Yine de buluttan çekmek istiyor musunuz?`
+                                );
+                                if (!proceed) return;
                             } else {
-                                alert("Buluttan veri çekilemedi. Hata Kodu: " + response.status);
+                                if (!confirm("Buluttaki veriler indirilip, şu anki ekranınızdaki verilerin üzerine yazılacak. Emin misiniz?")) return;
                             }
-                        } catch (e) {
-                            alert("Bağlantı Hatası: " + e.message);
+
+                            // SAFETY CHECK 2: Auto Backup
+                            console.log("Creating auto-backup before overwrite...");
+                            const backupData = { vehicles, expenses, appointments, settings, documents, updatedAt: new Date().toISOString() };
+                            const blob = new Blob([JSON.stringify(backupData, null, 2)], { type: 'application/json' });
+                            const url = URL.createObjectURL(blob);
+                            const a = document.createElement('a');
+                            a.href = url;
+                            a.download = `OTOMATIK_YEDEK_ONCESI_${new Date().toISOString().split('T')[0]}_${new Date().getHours()}-${new Date().getMinutes()}.json`;
+                            document.body.appendChild(a);
+                            a.click();
+                            document.body.removeChild(a);
+
+                            // Proceed with restore
+                            setVehicles(cloudData.vehicles || []);
+                            setExpenses(cloudData.expenses || []);
+                            setAppointments(cloudData.appointments || []);
+                            setSettings(cloudData.settings || initialSettings);
+                            setDocuments(cloudData.documents || []);
+                            alert("Başarılı! Veriler buluttan çekildi. 🟢\n(İşlem öncesi verileriniz otomatik olarak indirilenler klasörüne yedeklendi)");
+                            setBackendStatus('connected');
+                        } else {
+                            alert("Buluttan veri çekilemedi. Hata Kodu: " + response.status);
                         }
+                    } catch (e) {
+                        alert("Bağlantı Hatası: " + e.message);
                     }
                 };
 
