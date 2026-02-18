@@ -1141,7 +1141,16 @@
                                         <div className="vehicle-header">
                                             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                                                 <div className="plate" style={{ borderColor: color }}>{v.plaka}</div>
-                                                {v.driver && <span style={{ color: 'white', fontSize: '1.1rem', fontWeight: 'bold' }}>| {v.driver}</span>}
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '5px', cursor: 'pointer' }}
+                                                    onClick={(e) => { e.stopPropagation(); setEditingVehicle(v); setActiveModal('editVehicle'); }}
+                                                    title="Sürücü Bilgisini Düzenle">
+                                                    {v.driver ? (
+                                                        <span style={{ color: 'white', fontSize: '1.1rem', fontWeight: 'bold' }}>| {v.driver}</span>
+                                                    ) : (
+                                                        <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.9rem', fontStyle: 'italic' }}>| Sürücü Ekle</span>
+                                                    )}
+                                                    <Icon name="edit" size={14} style={{ opacity: 0.7 }} />
+                                                </div>
                                             </div>
 
                                             {/* Vehicle Image */}
