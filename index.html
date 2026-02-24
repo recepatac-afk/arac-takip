@@ -2041,13 +2041,46 @@
                             </div>
                         )}
                         {type === 'TAMIRAT' && (
-                            <div className="form-group"><label className="form-label">Değişen Parça / İşlem Listesi</label>
-                                <textarea name="degistirenParca" required={type === 'TAMIRAT'} rows="5" placeholder="Yapılan işlemleri detaylıca yazınız..."></textarea>
+                            <div className="row">
+                                <div className="col form-group">
+                                    <label className="form-label">Tamirat Tipi</label>
+                                    <select name="tamiratTipi" defaultValue={initialData?.tamiratTipi}>
+                                        <option value="">Seçiniz...</option>
+                                        <option>Motor / Mekanik</option>
+                                        <option>Elektrik / Elektronik</option>
+                                        <option>Kaporta / Boya</option>
+                                        <option>Fren Sistemi</option>
+                                        <option>Şanzıman / Kavrama</option>
+                                        <option>Ön Takım / Amortisör</option>
+                                        <option>Egzoz Sistemi</option>
+                                        <option>Lastik / Jant</option>
+                                        <option>Diğer</option>
+                                    </select>
+                                </div>
+                                <div className="col form-group">
+                                    <label className="form-label">Değişen Parça / İşlem</label>
+                                    <textarea name="degistirenParca" required={type === 'TAMIRAT'} rows="1" defaultValue={initialData?.degistirenParca} placeholder="Yapılan işlem..."></textarea>
+                                </div>
                             </div>
                         )}
                         {type === 'DUZENLI' && (
                             <div className="form-group"><label className="form-label">Ödeme Tipi</label>
-                                <select name="odemeTipi"><option>Kasko</option><option>Sigorta</option><option>MTV</option><option>Bakım</option></select>
+                                <select name="odemeTipi" defaultValue={initialData?.odemeTipi}><option>Kasko</option><option>Sigorta</option><option>MTV</option><option>Bakım</option></select>
+                            </div>
+                        )}
+                        {type === 'DIGER' && (
+                            <div className="form-group">
+                                <label className="form-label">Harcama Detayı</label>
+                                <select name="digerTipi" defaultValue={initialData?.digerTipi}>
+                                    <option value="">Seçiniz...</option>
+                                    <option>Lastik Değişimi</option>
+                                    <option>Araç Yıkama</option>
+                                    <option>Otopark</option>
+                                    <option>Trafik Cezası</option>
+                                    <option>Aksesuar / Modifiye</option>
+                                    <option>Cam Suyu / Antifriz</option>
+                                    <option>Diğer</option>
+                                </select>
                             </div>
                         )}
 
@@ -2159,6 +2192,11 @@
                         <div style={{ marginTop: '15px' }}>
                             <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Açıklama / Detay</label>
                             <div style={{ background: 'rgba(255,255,255,0.05)', padding: '10px', borderRadius: '8px', minHeight: '60px' }}>
+                                {(expense.tamiratTipi || expense.digerTipi || expense.odemeTipi) && (
+                                    <div style={{ marginBottom: '8px', color: '#fbbf24', fontWeight: 'bold', fontSize: '0.9rem' }}>
+                                        {expense.tamiratTipi || expense.digerTipi || expense.odemeTipi}
+                                    </div>
+                                )}
                                 {expense.aciklama || expense.degistirenParca || "Açıklama girilmemiş."}
                             </div>
                         </div>
