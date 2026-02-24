@@ -1610,6 +1610,64 @@
                         }
 
                         {
+                            activeModal === 'editSale' && editingVehicleId && (
+                                <Modal title="Satış Bilgilerini Düzenle" onClose={() => { setActiveModal('soldVehicles'); setEditingVehicleId(null); }}>
+                                    <form onSubmit={(e) => {
+                                        e.preventDefault();
+                                        const formData = new FormData(e.target);
+                                        const saleData = Object.fromEntries(formData);
+                                        const v = vehicles.find(v => v.id === editingVehicleId);
+                                        if (v) {
+                                            const updatedV = {
+                                                ...v,
+                                                saleDetails: {
+                                                    date: saleData.date,
+                                                    buyer: saleData.buyer,
+                                                    phone: saleData.phone,
+                                                    tcNo: saleData.tcNo,
+                                                    price: saleData.price,
+                                                    km: saleData.km
+                                                }
+                                            };
+                                            updateVehicle(updatedV);
+                                            alert("Satış bilgileri güncellendi! ✅");
+                                            setActiveModal('soldVehicles');
+                                            setEditingVehicleId(null);
+                                        }
+                                    }}>
+                                        {(() => {
+                                            const v = vehicles.find(v => v.id === editingVehicleId);
+                                            const sd = v?.saleDetails || {};
+                                            return (
+                                                <>
+                                                    <div className="form-group"><label className="form-label">Satış Tarihi</label><input type="date" name="date" required defaultValue={sd.date} /></div>
+                                                    <div className="form-group"><label className="form-label">Kime Satıldı</label><input type="text" name="buyer" required defaultValue={sd.buyer} placeholder="Alıcı Adı Soyadı / Firma" /></div>
+                                                    <div className="row">
+                                                        <div className="col form-group">
+                                                            <label className="form-label">Alıcı Telefon</label>
+                                                            <input type="tel" name="phone" defaultValue={sd.phone} placeholder="05XX XXX XX XX" />
+                                                        </div>
+                                                        <div className="col form-group">
+                                                            <label className="form-label">Alıcı TC No</label>
+                                                            <input type="number" name="tcNo" defaultValue={sd.tcNo} placeholder="TC Kimlik No" onInput={(e) => { if (e.target.value.length > 11) e.target.value = e.target.value.slice(0, 11); }} />
+                                                        </div>
+                                                    </div>
+                                                    <div className="form-group"><label className="form-label">Satış Fiyatı (TL)</label><input type="number" name="price" required defaultValue={sd.price} placeholder="0.00" /></div>
+                                                    <div className="form-group"><label className="form-label">Satış Kilometresi</label><input type="number" name="km" required defaultValue={sd.km} placeholder="KM" /></div>
+                                                </>
+                                            );
+                                        })()}
+
+                                        <div className="row" style={{ marginTop: '20px' }}>
+                                            <button type="button" className="btn btn-secondary col" onClick={() => { setActiveModal('soldVehicles'); setEditingVehicleId(null); }}>İptal</button>
+                                            <button type="submit" className="btn btn-primary col">Değişiklikleri Kaydet</button>
+                                        </div>
+                                    </form>
+                                </Modal>
+                            )
+                        }
+
+                        {
                             activeModal === 'soldVehicles' && (
                                 <Modal title="Satılan Araçlar Arşivi" onClose={() => setActiveModal(null)}>
                                     <div style={{ maxHeight: '600px', overflowY: 'auto' }}>
@@ -1629,14 +1687,18 @@
                                                             <div><strong>Fiyat:</strong> {formatCurrency(v.saleDetails?.price)}</div>
                                                             <div><strong>KM:</strong> {v.saleDetails?.km}</div>
                                                         </div>
-                                                        <div style={{ display: 'flex', gap: '10px' }}>
-                                                            <button className="btn btn-secondary" style={{ flex: 1 }} onClick={() => {
+                                                        <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+                                                            <button className="btn btn-secondary" style={{ flex: '1 1 45%' }} onClick={() => {
+                                                                setEditingVehicleId(v.id);
+                                                                setActiveModal('editSale');
+                                                            }}>📝 Düzenle</button>
+                                                            <button className="btn btn-secondary" style={{ flex: '1 1 45%' }} onClick={() => {
                                                                 if (confirm("Satış işlemini geri almak istediğinize emin misiniz? Araç tekrar aktif listeye dönecek.")) {
                                                                     const updatedV = { ...v, status: 'active', saleDetails: null };
                                                                     updateVehicle(updatedV);
                                                                 }
                                                             }}>↩️ Geri Al</button>
-                                                            <button className="btn btn-secondary" style={{ flex: 1, color: '#ef4444', borderColor: '#ef4444' }} onClick={() => deleteVehicle(v.id)}>🗑️ Sil</button>
+                                                            <button className="btn btn-secondary" style={{ flex: '1 1 100%', color: '#ef4444', borderColor: '#ef4444' }} onClick={() => deleteVehicle(v.id)}>🗑️ Sil</button>
                                                         </div>
                                                     </div>
                                                 ))}
