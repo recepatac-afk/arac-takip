@@ -1573,6 +1573,8 @@
                                                 saleDetails: {
                                                     date: saleData.date,
                                                     buyer: saleData.buyer,
+                                                    phone: saleData.phone,
+                                                    tcNo: saleData.tcNo,
                                                     price: saleData.price,
                                                     km: saleData.km
                                                 }
@@ -1585,6 +1587,16 @@
                                     }}>
                                         <div className="form-group"><label className="form-label">Satış Tarihi</label><input type="date" name="date" required defaultValue={new Date().toISOString().split('T')[0]} /></div>
                                         <div className="form-group"><label className="form-label">Kime Satıldı</label><input type="text" name="buyer" required placeholder="Alıcı Adı Soyadı / Firma" /></div>
+                                        <div className="row">
+                                            <div className="col form-group">
+                                                <label className="form-label">Alıcı Telefon</label>
+                                                <input type="tel" name="phone" placeholder="05XX XXX XX XX" />
+                                            </div>
+                                            <div className="col form-group">
+                                                <label className="form-label">Alıcı TC No</label>
+                                                <input type="number" name="tcNo" placeholder="TC Kimlik No" onInput={(e) => { if (e.target.value.length > 11) e.target.value = e.target.value.slice(0, 11); }} />
+                                            </div>
+                                        </div>
                                         <div className="form-group"><label className="form-label">Satış Fiyatı (TL)</label><input type="number" name="price" required placeholder="0.00" /></div>
                                         <div className="form-group"><label className="form-label">Satış Kilometresi</label><input type="number" name="km" required placeholder="KM" /></div>
 
@@ -1611,6 +1623,8 @@
                                                         <div style={{ fontWeight: 'bold', fontSize: '1.2rem', marginBottom: '10px' }}>{v.plaka} - {v.brand} {v.model}</div>
                                                         <div style={{ fontSize: '0.9rem', marginBottom: '15px' }}>
                                                             <div><strong>Alıcı:</strong> {v.saleDetails?.buyer}</div>
+                                                            {v.saleDetails?.phone && <div><strong>Tel:</strong> {v.saleDetails?.phone}</div>}
+                                                            {v.saleDetails?.tcNo && <div><strong>TC No:</strong> {v.saleDetails?.tcNo}</div>}
                                                             <div><strong>Tarih:</strong> {formatDate(v.saleDetails?.date)}</div>
                                                             <div><strong>Fiyat:</strong> {formatCurrency(v.saleDetails?.price)}</div>
                                                             <div><strong>KM:</strong> {v.saleDetails?.km}</div>
