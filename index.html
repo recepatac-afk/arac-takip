@@ -517,7 +517,7 @@
             const generateId = () => Math.random().toString(36).substr(2, 9);
             const formatCurrency = (amount) => new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY' }).format(amount);
             const formatDate = (dateStr) => new Date(dateStr).toLocaleDateString('tr-TR');
-            const resizeImage = (base64Str, maxWidth = 800, maxHeight = 600) => {
+            const resizeImage = (base64Str, maxWidth = 1920, maxHeight = 1920) => {
                 return new Promise((resolve) => {
                     const img = new Image();
                     img.src = base64Str;
@@ -534,7 +534,7 @@
                         canvas.height = height;
                         const ctx = canvas.getContext('2d');
                         ctx.drawImage(img, 0, 0, width, height);
-                        resolve(canvas.toDataURL('image/jpeg', 0.8));
+                        resolve(canvas.toDataURL('image/jpeg', 0.95));
                     };
                 });
             };
@@ -1279,6 +1279,38 @@
                                                     <span style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>Tarih Gir</span>
                                                 </div>
                                             )}
+
+                                            {/* Son Bakım */}
+                                            <div
+                                                onClick={(e) => { e.stopPropagation(); setEditingVehicle(v); setActiveModal('editVehicle'); }}
+                                                style={{ display: 'flex', justifyContent: 'space-between', padding: '10px', borderRadius: '8px', background: 'rgba(0,0,0,0.3)', borderLeft: '4px solid var(--primary)', cursor: 'pointer', marginTop: '5px' }}
+                                                title="Bakım bilgilerini düzenlemek için tıkla"
+                                            >
+                                                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                                    <span style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>Son Bakım</span>
+                                                    {v.bakimTarih ? <span style={{ fontSize: '0.8rem', color: 'white' }}>{formatDate(v.bakimTarih)}</span> : <span style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.3)' }}>-</span>}
+                                                </div>
+                                                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
+                                                    <span style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>KM</span>
+                                                    {v.bakimKm ? <span style={{ fontSize: '0.9rem', fontWeight: 'bold', color: 'white' }}>{v.bakimKm}</span> : <span style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.3)' }}>-</span>}
+                                                </div>
+                                            </div>
+
+                                            {/* Gelecek Bakım */}
+                                            <div
+                                                onClick={(e) => { e.stopPropagation(); setEditingVehicle(v); setActiveModal('editVehicle'); }}
+                                                style={{ display: 'flex', justifyContent: 'space-between', padding: '10px', borderRadius: '8px', background: 'rgba(0,0,0,0.3)', borderLeft: '4px solid #f59e0b', cursor: 'pointer' }}
+                                                title="Gelecek bakım bilgilerini düzenlemek için tıkla"
+                                            >
+                                                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                                    <span style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>Gelecek Bakım</span>
+                                                    {v.gelecekBakimTarih ? <span style={{ fontSize: '0.8rem', color: 'white' }}>{formatDate(v.gelecekBakimTarih)}</span> : <span style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.3)' }}>-</span>}
+                                                </div>
+                                                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
+                                                    <span style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>KM Hedefi</span>
+                                                    {v.gelecekBakimKm ? <span style={{ fontSize: '0.9rem', fontWeight: 'bold', color: '#f59e0b' }}>{v.gelecekBakimKm}</span> : <span style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.3)' }}>-</span>}
+                                                </div>
+                                            </div>
                                         </div>
                                         <div style={{ display: 'flex', gap: '10px' }}>
                                             <button className="btn btn-primary" style={{ flex: 2, justifyContent: 'center', background: `linear-gradient(135deg, ${color}, ${color}dd)`, border: 'none' }}
@@ -1316,6 +1348,14 @@
                                             <div className="col form-group"><label className="form-label">Egzoz Muayene Tarihi</label><input name="egzozTarih" type="date" /></div>
                                             <div className="col form-group"><label className="form-label">Genel Muayene Tarihi</label><input name="muayeneTarih" type="date" /></div>
                                         </div>
+                                        <div className="row">
+                                            <div className="col form-group"><label className="form-label">Son Bakım Tarihi</label><input name="bakimTarih" type="date" /></div>
+                                            <div className="col form-group"><label className="form-label">Son Bakım KM</label><input name="bakimKm" type="number" placeholder="Örn: 150000" /></div>
+                                        </div>
+                                        <div className="row">
+                                            <div className="col form-group"><label className="form-label">Gelecek Bakım Tarihi</label><input name="gelecekBakimTarih" type="date" /></div>
+                                            <div className="col form-group"><label className="form-label">Gelecek Bakım KM</label><input name="gelecekBakimKm" type="number" placeholder="Örn: 160000" /></div>
+                                        </div>
                                         <div className="row" style={{ marginTop: '20px' }}>
                                             <button type="button" className="btn btn-secondary col" onClick={() => setActiveModal(null)}>İptal</button>
                                             <button type="submit" className="btn btn-primary col">Kaydet</button>
@@ -1344,6 +1384,14 @@
                                         <div className="row">
                                             <div className="col form-group"><label className="form-label">Egzoz Muayene Tarihi</label><input name="egzozTarih" type="date" defaultValue={editingVehicle.egzozTarih} /></div>
                                             <div className="col form-group"><label className="form-label">Genel Muayene Tarihi</label><input name="muayeneTarih" type="date" defaultValue={editingVehicle.muayeneTarih} /></div>
+                                        </div>
+                                        <div className="row">
+                                            <div className="col form-group"><label className="form-label">Son Bakım Tarihi</label><input name="bakimTarih" type="date" defaultValue={editingVehicle.bakimTarih} /></div>
+                                            <div className="col form-group"><label className="form-label">Son Bakım KM</label><input name="bakimKm" type="number" defaultValue={editingVehicle.bakimKm} /></div>
+                                        </div>
+                                        <div className="row">
+                                            <div className="col form-group"><label className="form-label">Gelecek Bakım Tarihi</label><input name="gelecekBakimTarih" type="date" defaultValue={editingVehicle.gelecekBakimTarih} /></div>
+                                            <div className="col form-group"><label className="form-label">Gelecek Bakım KM</label><input name="gelecekBakimKm" type="number" defaultValue={editingVehicle.gelecekBakimKm} /></div>
                                         </div>
                                         <div className="row" style={{ marginTop: '20px' }}>
                                             <button type="button" className="btn btn-secondary col" onClick={() => { setActiveModal(null); setEditingVehicle(null); }}>İptal</button>
@@ -1757,7 +1805,7 @@
                 useEffect(() => {
                     let stream = null;
                     if (showCamera) {
-                        navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
+                        navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment', width: { ideal: 1920 }, height: { ideal: 1080 } } })
                             .then(s => { stream = s; if (videoRef.current) videoRef.current.srcObject = stream; })
                             .catch(err => alert("Kamera hatası: " + err.message));
                     }
@@ -1766,16 +1814,32 @@
 
                 const capture = () => {
                     if (!videoRef.current) return;
+                    const video = videoRef.current;
                     const canvas = document.createElement('canvas');
-                    canvas.width = videoRef.current.videoWidth;
-                    canvas.height = videoRef.current.videoHeight;
-                    canvas.getContext('2d').drawImage(videoRef.current, 0, 0);
-                    const dataUrl = canvas.toDataURL('image/jpeg');
-                    resizeImage(dataUrl).then(resized => {
-                        setAttachment(resized);
+
+                    canvas.width = video.videoWidth || 1920;
+                    canvas.height = video.videoHeight || 1080;
+
+                    const ctx = canvas.getContext('2d');
+                    ctx.imageSmoothingEnabled = false; // keep crisp
+
+                    // Draw original high res for UI and Storage
+                    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+                    const uiDataUrl = canvas.toDataURL('image/jpeg', 1.0);
+
+                    // Apply filters for OCR (Grayscale + High Contrast)
+                    ctx.filter = 'grayscale(100%) contrast(200%) brightness(120%)';
+                    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+                    const ocrDataUrl = canvas.toDataURL('image/jpeg', 1.0);
+
+                    // We store the natural image for the user but scan the contrasted one
+                    resizeImage(uiDataUrl).then(resizedUi => {
+                        setAttachment(resizedUi);
                         setShowCamera(false);
-                        scanImage(resized);
                     });
+
+                    // Scan the high-contrast version for better text extraction
+                    scanImage(ocrDataUrl);
                 };
 
                 const handleFileChange = async (e) => {
@@ -1832,17 +1896,25 @@
                     if (!window.Tesseract) return;
                     setOcrStatus('scanning');
                     try {
-                        const { data: { text } } = await Tesseract.recognize(imageSrc, 'tur', { logger: m => console.log(m) });
-                        console.log("OCR Result:", text.toLowerCase());
+                        // Using 'tur' for Turkish. We can try to preprocess or configure it better, but pure high res image helps most.
+                        const { data: { text } } = await Tesseract.recognize(imageSrc, 'tur', {
+                            logger: m => console.log(m)
+                        });
+                        console.log("OCR Result RAW:\n", text);
                         const lowerText = text.toLowerCase();
 
-                        // 1. Date Extraction (DD.MM.YYYY, DD/MM/YYYY, DD-MM-YYYY)
-                        const dateMatch = text.match(/(\d{2}[./-]\d{2}[./-]\d{4})/);
+                        // 1. Date Extraction (DD.MM.YYYY, DD/MM/YYYY, DD-MM-YYYY or YY)
+                        let dateMatch = text.match(/(\d{2}[./-]\d{2}[./-]\d{4})/);
+                        if (!dateMatch) dateMatch = text.match(/(\d{2}[./-]\d{2}[./-]\d{2})/); // fallback for 23.05.24
+
                         if (dateMatch && dateRef.current) {
                             const parts = dateMatch[0].split(/[./-]/);
-                            // Ensure valid date parts
-                            if (parts[2].length === 4) {
-                                dateRef.current.value = `${parts[2]}-${parts[1]}-${parts[0]}`;
+                            if (parts.length === 3) {
+                                let year = parts[2];
+                                let month = parts[1];
+                                let day = parts[0];
+                                if (year.length === 2) year = "20" + year; // assume 20xx
+                                dateRef.current.value = `${year}-${month}-${day}`;
                             }
                         }
 
@@ -1853,19 +1925,26 @@
 
                         let bestAmount = 0;
                         const lines = text.split('\n');
-                        const amountKeywords = ['TOPLAM', 'TUTAR', 'ODENECEK', 'GENEL'];
+                        const amountKeywords = ['TOPLAM', 'TUTAR', 'ODENECEK', 'GENEL', 'KDV DAHIL', 'KREDİ KARTI'];
 
                         // Strategy A: Keyword Search
                         for (const line of lines) {
                             const upperLine = line.toUpperCase();
                             if (amountKeywords.some(k => upperLine.includes(k))) {
                                 // Extract all numbers from this line
-                                const matches = line.match(/(\d+[.,]\d{2,})/g);
+                                // Match formats like 1.500,00 , 1500,00 , 1500.00 , *1500,00* etc.
+                                const matches = line.match(/(\d{1,3}(?:[.,]\d{3})*(?:[.,]\d{2}))/g);
                                 if (matches) {
                                     for (const m of matches) {
-                                        // Replace dots (thousands) with empty, replace comma with dot
-                                        // Standard TR format: 1.000,50 -> 1000.50
-                                        let valStr = m.replace(/\./g, '').replace(',', '.');
+                                        // Standardize to Number
+                                        // If ends with ,XX -> replace . with nothing, replace , with .
+                                        // If ends with .XX -> replace , with nothing
+                                        let valStr = m;
+                                        if (valStr.match(/,\d{2}$/)) {
+                                            valStr = valStr.replace(/\./g, '').replace(',', '.');
+                                        } else if (valStr.match(/\.\d{2}$/)) {
+                                            valStr = valStr.replace(/,/g, '');
+                                        }
                                         let val = parseFloat(valStr);
                                         if (!isNaN(val) && val > bestAmount) bestAmount = val;
                                     }
@@ -1876,10 +1955,15 @@
                         // Strategy B: Fallback if found nothing significant (< 1)
                         if (bestAmount < 1) {
                             // Look for any number that looks like currency (ends with ,00 or .00 or similar)
-                            const matches = text.match(/(\d{1, 3}(\.\d{3})*,\d{2})/g); // Matches 1.000,00
+                            const matches = text.match(/(\d{1,3}(?:[.,]\d{3})*(?:[.,]\d{2}))/g);
                             if (matches) {
                                 for (const m of matches) {
-                                    let valStr = m.replace(/\./g, '').replace(',', '.');
+                                    let valStr = m;
+                                    if (valStr.match(/,\d{2}$/)) {
+                                        valStr = valStr.replace(/\./g, '').replace(',', '.');
+                                    } else if (valStr.match(/\.\d{2}$/)) {
+                                        valStr = valStr.replace(/,/g, '');
+                                    }
                                     let val = parseFloat(valStr);
                                     if (!isNaN(val) && val > bestAmount) bestAmount = val;
                                 }
@@ -2098,7 +2182,7 @@
                 const [error, setError] = useState(null);
 
                 useEffect(() => {
-                    navigator.mediaDevices.getUserMedia({ video: true })
+                    navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment', width: { ideal: 1920 }, height: { ideal: 1080 } } })
                         .then(stream => { if (videoRef.current) videoRef.current.srcObject = stream; })
                         .catch(err => setError("Kameraya erişilemedi: " + err.message));
                     return () => {
@@ -2109,11 +2193,17 @@
 
                 const capture = () => {
                     if (!videoRef.current) return;
+                    const video = videoRef.current;
                     const canvas = document.createElement('canvas');
-                    canvas.width = videoRef.current.videoWidth;
-                    canvas.height = videoRef.current.videoHeight;
-                    canvas.getContext('2d').drawImage(videoRef.current, 0, 0);
-                    onCapture(canvas.toDataURL('image/jpeg'));
+
+                    // Always use true video resolution, fallback to 1920x1080 if not set
+                    canvas.width = video.videoWidth || 1920;
+                    canvas.height = video.videoHeight || 1080;
+
+                    const ctx = canvas.getContext('2d');
+                    ctx.imageSmoothingEnabled = false; // keep crisp
+                    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+                    onCapture(canvas.toDataURL('image/jpeg', 1.0));
                 };
 
                 return (
@@ -2212,24 +2302,52 @@
 
             const ImageViewerModal = ({ src, onClose }) => {
                 const [zoom, setZoom] = useState(1);
+                const [brightness, setBrightness] = useState(100);
+                const [contrast, setContrast] = useState(100);
+
+                const handleWheel = (e) => {
+                    if (e.deltaY < 0) {
+                        setZoom(z => Math.min(5, z + 0.1));
+                    } else {
+                        setZoom(z => Math.max(0.5, z - 0.1));
+                    }
+                };
+
                 return (
-                    <div className="modal-overlay" onClick={(e) => e.target === e.currentTarget && onClose()} style={{ zIndex: 2000, backgroundColor: 'rgba(0,0,0,0.9)' }}>
-                        <div style={{ position: 'relative', width: '100%', height: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                    <div className="modal-overlay" onWheel={handleWheel} onClick={(e) => e.target === e.currentTarget && onClose()} style={{ zIndex: 2000, backgroundColor: 'rgba(0,0,0,0.9)' }}>
+                        <div style={{ position: 'relative', width: '100%', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                             <div style={{ position: 'absolute', top: 20, right: 20, display: 'flex', gap: '10px', zIndex: 2001 }}>
+                                <button className="btn btn-secondary" title="Sıfırla" onClick={() => { setZoom(1); setBrightness(100); setContrast(100); }}><Icon name="camera" /> Sıfırla</button>
                                 <button className="btn btn-secondary" onClick={() => setZoom(z => Math.max(0.5, z - 0.2))}><Icon name="minus" /></button>
-                                <button className="btn btn-secondary" onClick={() => setZoom(z => Math.min(3, z + 0.2))}><Icon name="plus" /></button>
+                                <button className="btn btn-secondary" onClick={() => setZoom(z => Math.min(5, z + 0.2))}><Icon name="plus" /></button>
                                 <button className="btn btn-danger" onClick={onClose}><Icon name="x" /></button>
                             </div>
-                            <img
-                                src={src}
-                                style={{
-                                    transform: `scale(${zoom})`,
-                                    transition: 'transform 0.2s',
-                                    maxWidth: '90%',
-                                    maxHeight: '90%',
-                                    objectFit: 'contain'
-                                }}
-                            />
+
+                            <div style={{ flex: 1, display: 'flex', justifyContent: 'center', alignItems: 'center', width: '100%', overflow: 'hidden' }}>
+                                <img
+                                    src={src}
+                                    style={{
+                                        transform: `scale(${zoom})`,
+                                        transition: 'transform 0.1s ease-out, filter 0.2s',
+                                        filter: `brightness(${brightness}%) contrast(${contrast}%)`,
+                                        maxWidth: '90%',
+                                        maxHeight: '80vh',
+                                        objectFit: 'contain'
+                                    }}
+                                />
+                            </div>
+
+                            {/* Controls Panel */}
+                            <div className="glass-panel" style={{ position: 'absolute', bottom: 20, display: 'flex', gap: '20px', padding: '15px 25px', zIndex: 2001, borderRadius: '20px', flexWrap: 'wrap', justifyContent: 'center' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                    <label style={{ color: 'white', fontSize: '14px', whiteSpace: 'nowrap' }}>Aydınlatma: {brightness}%</label>
+                                    <input type="range" min="50" max="250" value={brightness} onChange={(e) => setBrightness(parseInt(e.target.value))} style={{ width: '100px' }} />
+                                </div>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                    <label style={{ color: 'white', fontSize: '14px', whiteSpace: 'nowrap' }}>Kontrast: {contrast}%</label>
+                                    <input type="range" min="50" max="250" value={contrast} onChange={(e) => setContrast(parseInt(e.target.value))} style={{ width: '100px' }} />
+                                </div>
+                            </div>
                         </div>
                     </div>
                 );
