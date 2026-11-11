@@ -477,7 +477,7 @@
         console.log("Starting React Script execution...");
 
         try {
-            const { useState, useEffect, useMemo } = React;
+            const { useState, useEffect, useMemo, useRef } = React;
 
             // Check if Recharts loaded
             if (!window.Recharts) throw new Error("Recharts library not loaded!");
@@ -517,7 +517,7 @@
             const generateId = () => Math.random().toString(36).substr(2, 9);
             const formatCurrency = (amount) => new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY' }).format(amount);
             const formatDate = (dateStr) => new Date(dateStr).toLocaleDateString('tr-TR');
-            const resizeImage = (base64Str, maxWidth = 800, maxHeight = 600) => {
+            const resizeImage = (base64Str, maxWidth = 1920, maxHeight = 1920) => {
                 return new Promise((resolve) => {
                     const img = new Image();
                     img.src = base64Str;
@@ -534,7 +534,7 @@
                         canvas.height = height;
                         const ctx = canvas.getContext('2d');
                         ctx.drawImage(img, 0, 0, width, height);
-                        resolve(canvas.toDataURL('image/jpeg', 0.8));
+                        resolve(canvas.toDataURL('image/jpeg', 0.95));
                     };
                 });
             };
@@ -590,132 +590,165 @@
 
 
 
-                // Detect Environment
+﻿                // ---- SUNUCU BAĞLANTISI (v3: veri kaybını önleyen sürüm) ----
                 const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.protocol === 'file:';
-                // TODO: USER MUST REPLACE THIS URL AFTER DEPLOYING BACKEND
                 const PRODUCTION_API_URL = 'https://arac-takip-1.onrender.com/api/data';
-                // Use 127.0.0.1 instead of localhost to avoid IPv6 resolution issues
                 const API_URL = isLocal ? 'http://127.0.0.1:8070/api/data' : PRODUCTION_API_URL;
+                const LS_KEY = 'vehicleApp_data';
+                const TOKEN_KEY = 'aracTakipToken';
 
-                // Load Data
+                const serverVersionRef = useRef(0);      // sunucudaki son bildiğimiz sürüm
+                const lastSyncedRef = useRef('');        // sunucuda olduğunu bildiğimiz verinin JSON'u
+                const latestSnapRef = useRef(null);      // ekrandaki en yeni veri
+                const savingRef = useRef(false);
+                const pendingRef = useRef(false);
+                const retryTimerRef = useRef(null);
+                const pushDebounceRef = useRef(null);
+                const [syncMsg, setSyncMsg] = useState('');
+
+                latestSnapRef.current = { vehicles, expenses, appointments, settings, documents };
+
+                const getToken = () => { try { return localStorage.getItem(TOKEN_KEY) || ''; } catch (e) { return ''; } };
+                const askToken = () => {
+                    const t = window.prompt('Bu uygulamanın parolasını girin (cihazda bir kez sorulur):');
+                    if (t && t.trim()) { try { localStorage.setItem(TOKEN_KEY, t.trim()); } catch (e) { } return true; }
+                    return false;
+                };
+                const apiCall = async (method, body, extraHeaders) => {
+                    const headers = { 'Content-Type': 'application/json' };
+                    const tk = getToken(); if (tk) headers['X-App-Token'] = tk;
+                    Object.assign(headers, extraHeaders || {});
+                    const controller = new AbortController();
+                    const timer = setTimeout(() => controller.abort(), 90000);
+                    try {
+                        const res = await fetch(API_URL, { method, headers, body: body ? JSON.stringify(body) : undefined, signal: controller.signal });
+                        let json = null; try { json = await res.json(); } catch (e) { }
+                        return { ok: res.ok, status: res.status, json };
+                    } finally { clearTimeout(timer); }
+                };
+                const snapOf = (d) => ({
+                    vehicles: d.vehicles || [], expenses: d.expenses || [], appointments: d.appointments || [],
+                    settings: d.settings || initialSettings, documents: d.documents || []
+                });
+                // Yerel yedek: dolarsa belge içeriklerini atıp yalnız listeyi saklar (sunucuda zaten var)
+                const saveLocal = (data) => {
+                    try { localStorage.setItem(LS_KEY, JSON.stringify(data)); return true; } catch (e) {
+                        try {
+                            const slim = { ...data, documents: (data.documents || []).map(d => ({ ...d, data: '', _slim: true })) };
+                            localStorage.setItem(LS_KEY, JSON.stringify(slim));
+                        } catch (e2) { console.warn('Yerel yedek yazılamadı', e2); }
+                        return false;
+                    }
+                };
+                const downloadJson = (obj, name) => {
+                    const blob = new Blob([JSON.stringify(obj, null, 2)], { type: 'application/json' });
+                    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name;
+                    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+                };
+                const applyData = (d) => {
+                    const s = snapOf(d);
+                    setVehicles(s.vehicles); setExpenses(s.expenses); setAppointments(s.appointments);
+                    setSettings(s.settings); setDocuments(s.documents);
+                };
+
+                // Veriyi yükle
                 useEffect(() => {
                     const loadData = async () => {
-                        let backendData = null;
-                        let localData = null;
-
-                        // 1. Fetch Backend Data
-                        try {
-                            const response = await fetch(API_URL);
-                            if (response.ok) {
-                                backendData = await response.json();
-                                console.log("Backend data fetched.");
-                                setBackendStatus('connected');
-                            } else {
-                                setBackendStatus('disconnected');
-                            }
-                        } catch (err) {
-                            console.warn("Backend unavailable:", err);
-                            setBackendStatus('disconnected');
-                        }
-
-                        // 2. Fetch LocalStorage Data
-                        const saved = localStorage.getItem('vehicleApp_data');
-                        if (saved) {
+                        let backendData = null, localData = null;
+                        for (let attempt = 0; attempt < 2; attempt++) {
                             try {
-                                localData = JSON.parse(saved);
-                                console.log("LocalStorage data found.");
-                            } catch (e) {
-                                console.error("Local Storage Parse Error:", e);
-                            }
+                                const r = await apiCall('GET');
+                                if (r.ok) { backendData = r.json; serverVersionRef.current = r.json.version || 0; setBackendStatus('connected'); break; }
+                                if (r.status === 401) { if (attempt === 0 && askToken()) continue; setBackendStatus('auth'); setSyncMsg('Parola gerekli'); }
+                                else { setBackendStatus('disconnected'); setSyncMsg('Sunucu yanıt vermedi (' + r.status + ')'); }
+                                break;
+                            } catch (err) { console.warn('Sunucu yok:', err); setBackendStatus('disconnected'); setSyncMsg('Sunucuya ulaşılamadı'); break; }
                         }
+                        try { const saved = localStorage.getItem(LS_KEY); if (saved) localData = JSON.parse(saved); } catch (e) { console.error('Yerel veri okunamadı', e); }
 
-                        // 3. Decide which data to use (Smart Sync)
+                        const isDefaultish = (d) => !d || ((d.vehicles || []).length <= 2 && (d.expenses || []).length === 0);
+                        const isReal = (d) => d && ((d.vehicles || []).length > 2 || (d.expenses || []).length > 0);
                         let finalData = null;
-                        let sourceSource = "";
-
-                        if (backendData && !localData) {
+                        if (backendData && !isDefaultish(backendData)) {
+                            finalData = backendData;                 // sunucu doluysa sunucu esastır
+                        } else if (isReal(localData)) {
+                            finalData = localData;                   // sunucu boş ama yerelde veri var: yerel esas, sunucuya geri yüklenecek
+                            console.warn('Sunucu boş görünüyor, yerel veri kullanılıyor.');
+                            // belge içeriği atılmışsa sunucudakinden tamamla
+                            const bdocs = {}; ((backendData && backendData.documents) || []).forEach(x => { bdocs[x.id] = x; });
+                            finalData = { ...localData, documents: (localData.documents || []).map(x => (x._slim && bdocs[x.id]) ? bdocs[x.id] : x) };
+                        } else if (backendData) {
                             finalData = backendData;
-                            sourceSource = "Backend";
-                        } else if (!backendData && localData) {
-                            finalData = localData;
-                            sourceSource = "LocalStorage";
-                        } else if (backendData && localData) {
-                            // Conflict Resolution: Check Timestamps
-                            const backendTime = new Date(backendData.updatedAt || 0).getTime();
-                            const localTime = new Date(localData.updatedAt || 0).getTime();
-
-                            // Use a buffer of 1 second to avoid minor drifts, but generally prefer newer
-                            // If Local is clearly newer (> 5000ms), use it.
-                            // If Backend is empty (default data) but Local has real data, use Local.
-                            const isBackendDefault = (backendData.vehicles || []).length <= 2 && (backendData.expenses || []).length === 0;
-                            const isLocalReal = (localData.vehicles || []).length > 2 || (localData.expenses || []).length > 0;
-
-                            if (isBackendDefault && isLocalReal) {
-                                console.warn("Backend seems empty/default, preferring LocalStorage.");
-                                finalData = localData;
-                                sourceSource = "LocalStorage (Backend Empty)";
-                            } else if (localTime > backendTime + 1000) {
-                                console.warn(`Local data is newer (${new Date(localTime).toLocaleTimeString()} vs ${new Date(backendTime).toLocaleTimeString()}). Using LocalStorage.`);
-                                finalData = localData;
-                                sourceSource = "LocalStorage (Newer)";
-                                // Ideally, we should autosave this to backend immediately
-                            } else {
-                                console.log("Backend data is newer or same. Using Backend.");
-                                finalData = backendData;
-                                sourceSource = "Backend";
-                            }
-                        } else {
-                            // Both null
-                            console.log("No data found, using initials.");
+                        } else if (localData) {
+                            finalData = localData;                   // sunucu yok, yerel veri var (çevrimdışı)
                         }
-
-                        // 4. Set State
-                        if (finalData) {
-                            setVehicles(finalData.vehicles || []);
-                            setExpenses(finalData.expenses || []);
-                            setAppointments(finalData.appointments || []);
-                            setSettings(finalData.settings || initialSettings);
-                            setDocuments(finalData.documents || []);
-                            if (sourceSource.includes("LocalStorage")) {
-                                // Show a notification or just info
-                                console.log("Restored from LocalStorage");
-                            }
-                        } else {
-                            // Initialize new
-                            setVehicles(initialVehicles);
-                            setExpenses(initialExpenses);
-                            setAppointments(initialAppointments);
-                        }
-
+                        const base = backendData ? snapOf(backendData) : (finalData ? snapOf(finalData) : snapOf({}));
+                        lastSyncedRef.current = JSON.stringify(base);  // sunucudakiyle aynıysa tekrar yazma
+                        if (finalData) applyData(finalData); else applyData({});
                         setIsDataLoaded(true);
                         setLoading(false);
                     };
                     loadData();
                 }, []);
 
-                // Save Data
+                // Sunucuya yaz (sıraya alınmış, çakışma ve boş veri korumalı)
+                const pushToServer = async () => {
+                    if (savingRef.current) { pendingRef.current = true; return; }
+                    savingRef.current = true;
+                    try {
+                        do {
+                            pendingRef.current = false;
+                            const snap = latestSnapRef.current;
+                            const json = JSON.stringify(snap);
+                            if (json === lastSyncedRef.current) { setBackendStatus('connected'); setSyncMsg(''); break; }
+                            setBackendStatus('saving');
+                            const r = await apiCall('POST', { ...snap, baseVersion: serverVersionRef.current });
+                            if (r.ok) {
+                                serverVersionRef.current = r.json.version; lastSyncedRef.current = json;
+                                setBackendStatus('connected'); setSyncMsg('');
+                            } else if (r.status === 401) {
+                                if (askToken()) { pendingRef.current = true; } else { setBackendStatus('auth'); setSyncMsg('Parola gerekli'); }
+                            } else if (r.status === 409) {
+                                setBackendStatus('conflict'); setSyncMsg('Başka cihazda daha yeni kayıt var');
+                                if (confirm('⚠️ Başka bir cihazda daha yeni değişiklik yapılmış.\n\nTamam: sunucudaki en yeni veri yüklenir (sizin son değişiklikleriniz önce bilgisayara yedek dosyası olarak indirilir).\nİptal: ekranda kalır, hiçbir şey sunucuya yazılmaz.')) {
+                                    downloadJson(snap, 'CAKISMA_YEDEGI_' + new Date().toISOString().slice(0, 16).replace(/[:T]/g, '-') + '.json');
+                                    const g = await apiCall('GET');
+                                    if (g.ok) { serverVersionRef.current = g.json.version || 0; lastSyncedRef.current = JSON.stringify(snapOf(g.json)); applyData(g.json); setBackendStatus('connected'); setSyncMsg(''); }
+                                }
+                            } else if (r.status === 422 || r.status === 413 || r.status === 400) {
+                                setBackendStatus('error'); setSyncMsg((r.json && r.json.error) || 'Sunucu kaydı reddetti');
+                                alert('Sunucu kaydı REDDETTİ (veri korunuyor):\n' + ((r.json && r.json.error) || r.status) + '\n\nEkrandaki verinizi "Veri İndir (Yedek)" ile kaydedin.');
+                            } else {
+                                setBackendStatus('disconnected'); setSyncMsg('Sunucu hatası (' + r.status + '), tekrar denenecek');
+                                clearTimeout(retryTimerRef.current); retryTimerRef.current = setTimeout(pushToServer, 20000);
+                            }
+                        } while (pendingRef.current);
+                    } catch (err) {
+                        setBackendStatus('disconnected'); setSyncMsg('Sunucuya ulaşılamadı, tekrar denenecek');
+                        clearTimeout(retryTimerRef.current); retryTimerRef.current = setTimeout(pushToServer, 20000);
+                    } finally { savingRef.current = false; }
+                };
+
+                // Her değişiklikte: yerel yedek + (değiştiyse) sunucuya yaz
                 useEffect(() => {
-                    if (isDataLoaded) {
-                        const data = {
-                            vehicles,
-                            expenses,
-                            appointments,
-                            settings,
-                            documents,
-                            updatedAt: new Date().toISOString() // Add timestamp for conflict resolution
-                        };
-
-                        // Save to LocalStorage (Always backup)
-                        localStorage.setItem('vehicleApp_data', JSON.stringify(data));
-
-                        // Save to Backend
-                        fetch(API_URL, {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify(data)
-                        }).catch(err => console.warn("Failed to save to backend:", err));
-                    }
+                    if (!isDataLoaded) return;
+                    const snap = latestSnapRef.current;
+                    if (JSON.stringify(snap) === lastSyncedRef.current) return;   // yalnızca yükleme olduysa yazma
+                    saveLocal({ ...snap, updatedAt: new Date().toISOString() });
+                    clearTimeout(pushDebounceRef.current);
+                    pushDebounceRef.current = setTimeout(pushToServer, 700);
                 }, [vehicles, expenses, appointments, settings, documents, isDataLoaded]);
+
+                // Kaydedilmemiş veri varken sayfayı kapatmayı uyar
+                useEffect(() => {
+                    const warn = (e) => {
+                        if (isDataLoaded && latestSnapRef.current && JSON.stringify(latestSnapRef.current) !== lastSyncedRef.current) {
+                            e.preventDefault(); e.returnValue = '';
+                        }
+                    };
+                    window.addEventListener('beforeunload', warn);
+                    return () => window.removeEventListener('beforeunload', warn);
+                }, [isDataLoaded]);
 
                 // EmailJS Init
                 useEffect(() => {
@@ -815,86 +848,31 @@
                     }
                 };
 
-                const forcePushToCloud = async () => {
-                    if (confirm("DİKKAT: Bilgisayarınızdaki bu veriler, buluttaki (internetteki) tüm verilerin üzerine yazılacak. Emin misiniz?")) {
-                        setBackendStatus('checking');
-                        const data = {
-                            vehicles,
-                            expenses,
-                            appointments,
-                            settings,
-                            documents,
-                            updatedAt: new Date().toISOString()
-                        };
+﻿                const forcePushToCloud = async () => {
+                    if (confirm("DİKKAT: Bu cihazdaki veriler, sunucudaki tüm verilerin üzerine yazılacak (sunucu önce eski sürümü geçmişe alır). Emin misiniz?")) {
+                        setBackendStatus('saving');
                         try {
-                            const res = await fetch(PRODUCTION_API_URL, {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify(data)
-                            });
-                            if (res.ok) {
-                                alert("Başarılı! Verileriniz GERÇEK BULUTA (Render.com) gönderildi. 🟢\nTelefondan sayfayı yenileyince veriler gelecektir.");
-                                setBackendStatus('connected');
-                            } else {
-                                alert("Hata! Sunucu kabul etmedi. Kod: " + res.status);
-                            }
-                        } catch (e) {
-                            alert("Bağlantı Hatası: " + e.message);
-                        }
+                            const snap = latestSnapRef.current;
+                            const r = await apiCall('POST', { ...snap, baseVersion: serverVersionRef.current }, { 'X-Force': '1' });
+                            if (r.ok) {
+                                serverVersionRef.current = r.json.version; lastSyncedRef.current = JSON.stringify(snap);
+                                alert("Başarılı! Verileriniz sunucuya gönderildi. 🟢"); setBackendStatus('connected'); setSyncMsg('');
+                            } else { setBackendStatus('error'); alert("Hata! Sunucu kabul etmedi. Kod: " + r.status + ((r.json && r.json.error) ? ' - ' + r.json.error : '')); }
+                        } catch (e) { setBackendStatus('disconnected'); alert("Bağlantı Hatası: " + e.message); }
                     }
                 };
 
                 const forcePullFromCloud = async () => {
                     setBackendStatus('checking');
                     try {
-                        const response = await fetch(PRODUCTION_API_URL);
-                        if (response.ok) {
-                            const cloudData = await response.json();
-
-                            // SAFETY CHECK 1: Compare Timestamps
-                            const localTime = new Date(settings.updatedAt || 0).getTime();
-                            const cloudTime = new Date(cloudData.updatedAt || 0).getTime();
-
-                            if (localTime > cloudTime) {
-                                const proceed = confirm(
-                                    `⚠️ DİKKAT: Bilgisayarınızdaki veriler Buluttakinden daha YENİ!\n\n` +
-                                    `Bilgisayar: ${new Date(localTime).toLocaleString()}\n` +
-                                    `Bulut: ${new Date(cloudTime).toLocaleString()}\n\n` +
-                                    `Eğer devam ederseniz, BİLGİSAYARDAKİ YENİ VERİLER SİLİNECEK ve eski veriler yüklenecektir.\n\n` +
-                                    `ÖNERİ: Önce 'İptal' diyip 'Buluta GÖNDER' yapın.\n\n` +
-                                    `Yine de buluttan çekmek istiyor musunuz?`
-                                );
-                                if (!proceed) return;
-                            } else {
-                                if (!confirm("Buluttaki veriler indirilip, şu anki ekranınızdaki verilerin üzerine yazılacak. Emin misiniz?")) return;
-                            }
-
-                            // SAFETY CHECK 2: Auto Backup
-                            console.log("Creating auto-backup before overwrite...");
-                            const backupData = { vehicles, expenses, appointments, settings, documents, updatedAt: new Date().toISOString() };
-                            const blob = new Blob([JSON.stringify(backupData, null, 2)], { type: 'application/json' });
-                            const url = URL.createObjectURL(blob);
-                            const a = document.createElement('a');
-                            a.href = url;
-                            a.download = `OTOMATIK_YEDEK_ONCESI_${new Date().toISOString().split('T')[0]}_${new Date().getHours()}-${new Date().getMinutes()}.json`;
-                            document.body.appendChild(a);
-                            a.click();
-                            document.body.removeChild(a);
-
-                            // Proceed with restore
-                            setVehicles(cloudData.vehicles || []);
-                            setExpenses(cloudData.expenses || []);
-                            setAppointments(cloudData.appointments || []);
-                            setSettings(cloudData.settings || initialSettings);
-                            setDocuments(cloudData.documents || []);
-                            alert("Başarılı! Veriler buluttan çekildi. 🟢\n(İşlem öncesi verileriniz otomatik olarak indirilenler klasörüne yedeklendi)");
-                            setBackendStatus('connected');
-                        } else {
-                            alert("Buluttan veri çekilemedi. Hata Kodu: " + response.status);
-                        }
-                    } catch (e) {
-                        alert("Bağlantı Hatası: " + e.message);
-                    }
+                        const r = await apiCall('GET');
+                        if (!r.ok) { setBackendStatus('error'); alert("Sunucudan veri çekilemedi. Hata Kodu: " + r.status); return; }
+                        if (!confirm("Sunucudaki veriler indirilip ekrandakilerin üzerine yazılacak. (Ekrandaki veri önce yedek dosyası olarak indirilir.) Emin misiniz?")) { setBackendStatus('connected'); return; }
+                        downloadJson(latestSnapRef.current, 'OTOMATIK_YEDEK_ONCESI_' + new Date().toISOString().slice(0, 16).replace(/[:T]/g, '-') + '.json');
+                        serverVersionRef.current = r.json.version || 0; lastSyncedRef.current = JSON.stringify(snapOf(r.json));
+                        applyData(r.json);
+                        alert("Başarılı! Veriler sunucudan çekildi. 🟢"); setBackendStatus('connected'); setSyncMsg('');
+                    } catch (e) { setBackendStatus('disconnected'); alert("Bağlantı Hatası: " + e.message); }
                 };
 
                 const exportData = () => {
@@ -1034,19 +1012,11 @@
                             <div className="brand flex items-center gap-2">
                                 <Icon name="car" size={32} />
                                 <span>FiloTakip Pro <small style={{ opacity: 0.5, fontSize: '0.6rem' }}>v3.0</small></span>
-                                <div style={{ marginLeft: '15px', fontSize: '0.75rem', padding: '2px 8px', borderRadius: '12px', background: backendStatus === 'connected' ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)', color: backendStatus === 'connected' ? '#10b981' : '#ef4444', border: `1px solid ${backendStatus === 'connected' ? 'rgba(16, 185, 129, 0.3)' : 'rgba(239, 68, 68, 0.3)'}`, display: 'flex', alignItems: 'center', gap: '5px', cursor: 'pointer' }}
-                                    onClick={() => {
-                                        setBackendStatus('checking');
-                                        fetch(API_URL).then(res => {
-                                            if (res.ok) { setBackendStatus('connected'); alert("Bağlantı Başarılı! 🟢"); }
-                                            else { setBackendStatus('disconnected'); alert("Bağlantı Hatası: Sunucu yanıt vermedi (Durum: " + res.status + ")"); }
-                                        }).catch(err => {
-                                            setBackendStatus('disconnected');
-                                            alert("Bağlantı Hatası: " + err.message + "\n\nLütfen siyah pencerenin (backend) açık olduğundan emin olun.");
-                                        });
-                                    }}
+﻿                                <div style={{ marginLeft: '15px', fontSize: '0.75rem', padding: '2px 8px', borderRadius: '12px', background: backendStatus === 'connected' ? 'rgba(16, 185, 129, 0.1)' : (backendStatus === 'saving' || backendStatus === 'checking' ? 'rgba(245, 158, 11, 0.1)' : 'rgba(239, 68, 68, 0.1)'), color: backendStatus === 'connected' ? '#10b981' : (backendStatus === 'saving' || backendStatus === 'checking' ? '#f59e0b' : '#ef4444'), border: `1px solid ${backendStatus === 'connected' ? 'rgba(16, 185, 129, 0.3)' : (backendStatus === 'saving' || backendStatus === 'checking' ? 'rgba(245, 158, 11, 0.3)' : 'rgba(239, 68, 68, 0.3)')}`, display: 'flex', alignItems: 'center', gap: '5px', cursor: 'pointer' }}
+                                    title={syncMsg}
+                                    onClick={() => { clearTimeout(retryTimerRef.current); pushToServer(); }}
                                 >
-                                    {backendStatus === 'connected' ? '● Kaydediliyor' : (backendStatus === 'checking' ? '● Kontrol Ediliyor...' : '● Kaydedilmiyor (Offline) - Tıkla Dene')}
+                                    {backendStatus === 'connected' ? '● Kaydedildi' : (backendStatus === 'saving' ? '● Kaydediliyor...' : (backendStatus === 'checking' ? '● Kontrol ediliyor...' : '● KAYDEDİLMEDİ' + (syncMsg ? ' (' + syncMsg + ')' : '') + ' - tıkla, tekrar dene'))}
                                 </div>
                             </div>
                             <div style={{ display: 'flex', gap: '10px' }}>
@@ -1279,6 +1249,38 @@
                                                     <span style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>Tarih Gir</span>
                                                 </div>
                                             )}
+
+                                            {/* Son Bakım */}
+                                            <div
+                                                onClick={(e) => { e.stopPropagation(); setEditingVehicle(v); setActiveModal('editVehicle'); }}
+                                                style={{ display: 'flex', justifyContent: 'space-between', padding: '10px', borderRadius: '8px', background: 'rgba(0,0,0,0.3)', borderLeft: '4px solid var(--primary)', cursor: 'pointer', marginTop: '5px' }}
+                                                title="Bakım bilgilerini düzenlemek için tıkla"
+                                            >
+                                                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                                    <span style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>Son Bakım</span>
+                                                    {v.bakimTarih ? <span style={{ fontSize: '0.8rem', color: 'white' }}>{formatDate(v.bakimTarih)}</span> : <span style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.3)' }}>-</span>}
+                                                </div>
+                                                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
+                                                    <span style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>KM</span>
+                                                    {v.bakimKm ? <span style={{ fontSize: '0.9rem', fontWeight: 'bold', color: 'white' }}>{v.bakimKm}</span> : <span style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.3)' }}>-</span>}
+                                                </div>
+                                            </div>
+
+                                            {/* Gelecek Bakım */}
+                                            <div
+                                                onClick={(e) => { e.stopPropagation(); setEditingVehicle(v); setActiveModal('editVehicle'); }}
+                                                style={{ display: 'flex', justifyContent: 'space-between', padding: '10px', borderRadius: '8px', background: 'rgba(0,0,0,0.3)', borderLeft: '4px solid #f59e0b', cursor: 'pointer' }}
+                                                title="Gelecek bakım bilgilerini düzenlemek için tıkla"
+                                            >
+                                                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                                    <span style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>Gelecek Bakım</span>
+                                                    {v.gelecekBakimTarih ? <span style={{ fontSize: '0.8rem', color: 'white' }}>{formatDate(v.gelecekBakimTarih)}</span> : <span style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.3)' }}>-</span>}
+                                                </div>
+                                                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
+                                                    <span style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>KM Hedefi</span>
+                                                    {v.gelecekBakimKm ? <span style={{ fontSize: '0.9rem', fontWeight: 'bold', color: '#f59e0b' }}>{v.gelecekBakimKm}</span> : <span style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.3)' }}>-</span>}
+                                                </div>
+                                            </div>
                                         </div>
                                         <div style={{ display: 'flex', gap: '10px' }}>
                                             <button className="btn btn-primary" style={{ flex: 2, justifyContent: 'center', background: `linear-gradient(135deg, ${color}, ${color}dd)`, border: 'none' }}
@@ -1316,6 +1318,14 @@
                                             <div className="col form-group"><label className="form-label">Egzoz Muayene Tarihi</label><input name="egzozTarih" type="date" /></div>
                                             <div className="col form-group"><label className="form-label">Genel Muayene Tarihi</label><input name="muayeneTarih" type="date" /></div>
                                         </div>
+                                        <div className="row">
+                                            <div className="col form-group"><label className="form-label">Son Bakım Tarihi</label><input name="bakimTarih" type="date" /></div>
+                                            <div className="col form-group"><label className="form-label">Son Bakım KM</label><input name="bakimKm" type="number" placeholder="Örn: 150000" /></div>
+                                        </div>
+                                        <div className="row">
+                                            <div className="col form-group"><label className="form-label">Gelecek Bakım Tarihi</label><input name="gelecekBakimTarih" type="date" /></div>
+                                            <div className="col form-group"><label className="form-label">Gelecek Bakım KM</label><input name="gelecekBakimKm" type="number" placeholder="Örn: 160000" /></div>
+                                        </div>
                                         <div className="row" style={{ marginTop: '20px' }}>
                                             <button type="button" className="btn btn-secondary col" onClick={() => setActiveModal(null)}>İptal</button>
                                             <button type="submit" className="btn btn-primary col">Kaydet</button>
@@ -1344,6 +1354,14 @@
                                         <div className="row">
                                             <div className="col form-group"><label className="form-label">Egzoz Muayene Tarihi</label><input name="egzozTarih" type="date" defaultValue={editingVehicle.egzozTarih} /></div>
                                             <div className="col form-group"><label className="form-label">Genel Muayene Tarihi</label><input name="muayeneTarih" type="date" defaultValue={editingVehicle.muayeneTarih} /></div>
+                                        </div>
+                                        <div className="row">
+                                            <div className="col form-group"><label className="form-label">Son Bakım Tarihi</label><input name="bakimTarih" type="date" defaultValue={editingVehicle.bakimTarih} /></div>
+                                            <div className="col form-group"><label className="form-label">Son Bakım KM</label><input name="bakimKm" type="number" defaultValue={editingVehicle.bakimKm} /></div>
+                                        </div>
+                                        <div className="row">
+                                            <div className="col form-group"><label className="form-label">Gelecek Bakım Tarihi</label><input name="gelecekBakimTarih" type="date" defaultValue={editingVehicle.gelecekBakimTarih} /></div>
+                                            <div className="col form-group"><label className="form-label">Gelecek Bakım KM</label><input name="gelecekBakimKm" type="number" defaultValue={editingVehicle.gelecekBakimKm} /></div>
                                         </div>
                                         <div className="row" style={{ marginTop: '20px' }}>
                                             <button type="button" className="btn btn-secondary col" onClick={() => { setActiveModal(null); setEditingVehicle(null); }}>İptal</button>
@@ -1757,7 +1775,7 @@
                 useEffect(() => {
                     let stream = null;
                     if (showCamera) {
-                        navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
+                        navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment', width: { ideal: 1920 }, height: { ideal: 1080 } } })
                             .then(s => { stream = s; if (videoRef.current) videoRef.current.srcObject = stream; })
                             .catch(err => alert("Kamera hatası: " + err.message));
                     }
@@ -1766,16 +1784,32 @@
 
                 const capture = () => {
                     if (!videoRef.current) return;
+                    const video = videoRef.current;
                     const canvas = document.createElement('canvas');
-                    canvas.width = videoRef.current.videoWidth;
-                    canvas.height = videoRef.current.videoHeight;
-                    canvas.getContext('2d').drawImage(videoRef.current, 0, 0);
-                    const dataUrl = canvas.toDataURL('image/jpeg');
-                    resizeImage(dataUrl).then(resized => {
-                        setAttachment(resized);
+
+                    canvas.width = video.videoWidth || 1920;
+                    canvas.height = video.videoHeight || 1080;
+
+                    const ctx = canvas.getContext('2d');
+                    ctx.imageSmoothingEnabled = false; // keep crisp
+
+                    // Draw original high res for UI and Storage
+                    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+                    const uiDataUrl = canvas.toDataURL('image/jpeg', 1.0);
+
+                    // Apply filters for OCR (Grayscale + High Contrast)
+                    ctx.filter = 'grayscale(100%) contrast(200%) brightness(120%)';
+                    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+                    const ocrDataUrl = canvas.toDataURL('image/jpeg', 1.0);
+
+                    // We store the natural image for the user but scan the contrasted one
+                    resizeImage(uiDataUrl).then(resizedUi => {
+                        setAttachment(resizedUi);
                         setShowCamera(false);
-                        scanImage(resized);
                     });
+
+                    // Scan the high-contrast version for better text extraction
+                    scanImage(ocrDataUrl);
                 };
 
                 const handleFileChange = async (e) => {
@@ -1832,17 +1866,25 @@
                     if (!window.Tesseract) return;
                     setOcrStatus('scanning');
                     try {
-                        const { data: { text } } = await Tesseract.recognize(imageSrc, 'tur', { logger: m => console.log(m) });
-                        console.log("OCR Result:", text.toLowerCase());
+                        // Using 'tur' for Turkish. We can try to preprocess or configure it better, but pure high res image helps most.
+                        const { data: { text } } = await Tesseract.recognize(imageSrc, 'tur', {
+                            logger: m => console.log(m)
+                        });
+                        console.log("OCR Result RAW:\n", text);
                         const lowerText = text.toLowerCase();
 
-                        // 1. Date Extraction (DD.MM.YYYY, DD/MM/YYYY, DD-MM-YYYY)
-                        const dateMatch = text.match(/(\d{2}[./-]\d{2}[./-]\d{4})/);
+                        // 1. Date Extraction (DD.MM.YYYY, DD/MM/YYYY, DD-MM-YYYY or YY)
+                        let dateMatch = text.match(/(\d{2}[./-]\d{2}[./-]\d{4})/);
+                        if (!dateMatch) dateMatch = text.match(/(\d{2}[./-]\d{2}[./-]\d{2})/); // fallback for 23.05.24
+
                         if (dateMatch && dateRef.current) {
                             const parts = dateMatch[0].split(/[./-]/);
-                            // Ensure valid date parts
-                            if (parts[2].length === 4) {
-                                dateRef.current.value = `${parts[2]}-${parts[1]}-${parts[0]}`;
+                            if (parts.length === 3) {
+                                let year = parts[2];
+                                let month = parts[1];
+                                let day = parts[0];
+                                if (year.length === 2) year = "20" + year; // assume 20xx
+                                dateRef.current.value = `${year}-${month}-${day}`;
                             }
                         }
 
@@ -1853,19 +1895,26 @@
 
                         let bestAmount = 0;
                         const lines = text.split('\n');
-                        const amountKeywords = ['TOPLAM', 'TUTAR', 'ODENECEK', 'GENEL'];
+                        const amountKeywords = ['TOPLAM', 'TUTAR', 'ODENECEK', 'GENEL', 'KDV DAHIL', 'KREDİ KARTI'];
 
                         // Strategy A: Keyword Search
                         for (const line of lines) {
                             const upperLine = line.toUpperCase();
                             if (amountKeywords.some(k => upperLine.includes(k))) {
                                 // Extract all numbers from this line
-                                const matches = line.match(/(\d+[.,]\d{2,})/g);
+                                // Match formats like 1.500,00 , 1500,00 , 1500.00 , *1500,00* etc.
+                                const matches = line.match(/(\d{1,3}(?:[.,]\d{3})*(?:[.,]\d{2}))/g);
                                 if (matches) {
                                     for (const m of matches) {
-                                        // Replace dots (thousands) with empty, replace comma with dot
-                                        // Standard TR format: 1.000,50 -> 1000.50
-                                        let valStr = m.replace(/\./g, '').replace(',', '.');
+                                        // Standardize to Number
+                                        // If ends with ,XX -> replace . with nothing, replace , with .
+                                        // If ends with .XX -> replace , with nothing
+                                        let valStr = m;
+                                        if (valStr.match(/,\d{2}$/)) {
+                                            valStr = valStr.replace(/\./g, '').replace(',', '.');
+                                        } else if (valStr.match(/\.\d{2}$/)) {
+                                            valStr = valStr.replace(/,/g, '');
+                                        }
                                         let val = parseFloat(valStr);
                                         if (!isNaN(val) && val > bestAmount) bestAmount = val;
                                     }
@@ -1876,10 +1925,15 @@
                         // Strategy B: Fallback if found nothing significant (< 1)
                         if (bestAmount < 1) {
                             // Look for any number that looks like currency (ends with ,00 or .00 or similar)
-                            const matches = text.match(/(\d{1, 3}(\.\d{3})*,\d{2})/g); // Matches 1.000,00
+                            const matches = text.match(/(\d{1,3}(?:[.,]\d{3})*(?:[.,]\d{2}))/g);
                             if (matches) {
                                 for (const m of matches) {
-                                    let valStr = m.replace(/\./g, '').replace(',', '.');
+                                    let valStr = m;
+                                    if (valStr.match(/,\d{2}$/)) {
+                                        valStr = valStr.replace(/\./g, '').replace(',', '.');
+                                    } else if (valStr.match(/\.\d{2}$/)) {
+                                        valStr = valStr.replace(/,/g, '');
+                                    }
                                     let val = parseFloat(valStr);
                                     if (!isNaN(val) && val > bestAmount) bestAmount = val;
                                 }
@@ -2098,7 +2152,7 @@
                 const [error, setError] = useState(null);
 
                 useEffect(() => {
-                    navigator.mediaDevices.getUserMedia({ video: true })
+                    navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment', width: { ideal: 1920 }, height: { ideal: 1080 } } })
                         .then(stream => { if (videoRef.current) videoRef.current.srcObject = stream; })
                         .catch(err => setError("Kameraya erişilemedi: " + err.message));
                     return () => {
@@ -2109,11 +2163,17 @@
 
                 const capture = () => {
                     if (!videoRef.current) return;
+                    const video = videoRef.current;
                     const canvas = document.createElement('canvas');
-                    canvas.width = videoRef.current.videoWidth;
-                    canvas.height = videoRef.current.videoHeight;
-                    canvas.getContext('2d').drawImage(videoRef.current, 0, 0);
-                    onCapture(canvas.toDataURL('image/jpeg'));
+
+                    // Always use true video resolution, fallback to 1920x1080 if not set
+                    canvas.width = video.videoWidth || 1920;
+                    canvas.height = video.videoHeight || 1080;
+
+                    const ctx = canvas.getContext('2d');
+                    ctx.imageSmoothingEnabled = false; // keep crisp
+                    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+                    onCapture(canvas.toDataURL('image/jpeg', 1.0));
                 };
 
                 return (
@@ -2212,24 +2272,52 @@
 
             const ImageViewerModal = ({ src, onClose }) => {
                 const [zoom, setZoom] = useState(1);
+                const [brightness, setBrightness] = useState(100);
+                const [contrast, setContrast] = useState(100);
+
+                const handleWheel = (e) => {
+                    if (e.deltaY < 0) {
+                        setZoom(z => Math.min(5, z + 0.1));
+                    } else {
+                        setZoom(z => Math.max(0.5, z - 0.1));
+                    }
+                };
+
                 return (
-                    <div className="modal-overlay" onClick={(e) => e.target === e.currentTarget && onClose()} style={{ zIndex: 2000, backgroundColor: 'rgba(0,0,0,0.9)' }}>
-                        <div style={{ position: 'relative', width: '100%', height: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                    <div className="modal-overlay" onWheel={handleWheel} onClick={(e) => e.target === e.currentTarget && onClose()} style={{ zIndex: 2000, backgroundColor: 'rgba(0,0,0,0.9)' }}>
+                        <div style={{ position: 'relative', width: '100%', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                             <div style={{ position: 'absolute', top: 20, right: 20, display: 'flex', gap: '10px', zIndex: 2001 }}>
+                                <button className="btn btn-secondary" title="Sıfırla" onClick={() => { setZoom(1); setBrightness(100); setContrast(100); }}><Icon name="camera" /> Sıfırla</button>
                                 <button className="btn btn-secondary" onClick={() => setZoom(z => Math.max(0.5, z - 0.2))}><Icon name="minus" /></button>
-                                <button className="btn btn-secondary" onClick={() => setZoom(z => Math.min(3, z + 0.2))}><Icon name="plus" /></button>
+                                <button className="btn btn-secondary" onClick={() => setZoom(z => Math.min(5, z + 0.2))}><Icon name="plus" /></button>
                                 <button className="btn btn-danger" onClick={onClose}><Icon name="x" /></button>
                             </div>
-                            <img
-                                src={src}
-                                style={{
-                                    transform: `scale(${zoom})`,
-                                    transition: 'transform 0.2s',
-                                    maxWidth: '90%',
-                                    maxHeight: '90%',
-                                    objectFit: 'contain'
-                                }}
-                            />
+
+                            <div style={{ flex: 1, display: 'flex', justifyContent: 'center', alignItems: 'center', width: '100%', overflow: 'hidden' }}>
+                                <img
+                                    src={src}
+                                    style={{
+                                        transform: `scale(${zoom})`,
+                                        transition: 'transform 0.1s ease-out, filter 0.2s',
+                                        filter: `brightness(${brightness}%) contrast(${contrast}%)`,
+                                        maxWidth: '90%',
+                                        maxHeight: '80vh',
+                                        objectFit: 'contain'
+                                    }}
+                                />
+                            </div>
+
+                            {/* Controls Panel */}
+                            <div className="glass-panel" style={{ position: 'absolute', bottom: 20, display: 'flex', gap: '20px', padding: '15px 25px', zIndex: 2001, borderRadius: '20px', flexWrap: 'wrap', justifyContent: 'center' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                    <label style={{ color: 'white', fontSize: '14px', whiteSpace: 'nowrap' }}>Aydınlatma: {brightness}%</label>
+                                    <input type="range" min="50" max="250" value={brightness} onChange={(e) => setBrightness(parseInt(e.target.value))} style={{ width: '100px' }} />
+                                </div>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                    <label style={{ color: 'white', fontSize: '14px', whiteSpace: 'nowrap' }}>Kontrast: {contrast}%</label>
+                                    <input type="range" min="50" max="250" value={contrast} onChange={(e) => setContrast(parseInt(e.target.value))} style={{ width: '100px' }} />
+                                </div>
+                            </div>
                         </div>
                     </div>
                 );
