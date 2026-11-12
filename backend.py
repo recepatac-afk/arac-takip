@@ -13,6 +13,7 @@ import hmac
 import http.server
 import json
 import os
+import re
 import socketserver
 import tempfile
 import threading
@@ -30,7 +31,7 @@ MAX_BODY = int(os.environ.get("MAX_BODY_MB", "40")) * 1024 * 1024
 HISTORY_KEEP = 40
 LIST_KEYS = ("vehicles", "expenses", "appointments", "documents")
 LOCK = threading.Lock()
-STATIC_OK = {"/index.html", "/manifest.json", "/sw.js"}
+STATIC_OK = {"/index.html", "/manifest.json", "/sw.js", "/fatura.html"}
 
 
 class HttpError(Exception):
@@ -135,6 +136,68 @@ class FileStore:
 STORE = SupabaseStore() if (SUPABASE_URL and SUPABASE_KEY) else FileStore()
 
 
+# ---------------------------------------------------------------- Fatura fotograflari (Supabase Storage, OZEL kova)
+BUCKET = "faturalar"
+MAX_PHOTO = 6 * 1024 * 1024
+FATURA_RE = re.compile(r"^/api/fatura/(liste|(\d{1,9})(/url)?)$")
+
+
+def sb_storage(method, path, body=None, content_type="application/json"):
+    url = f"{SUPABASE_URL}/storage/v1/{path}"
+    headers = {"apikey": SUPABASE_KEY, "Authorization": f"Bearer {SUPABASE_KEY}", "Content-Type": content_type}
+    if method == "POST" and path.startswith("object/" + BUCKET + "/"):
+        headers["x-upsert"] = "true"  # ayni kayda yeni foto eskisinin yerine gecer
+    req = urllib.request.Request(url, data=body, headers=headers, method=method)
+    try:
+        with urllib.request.urlopen(req, timeout=60) as r:
+            raw = r.read()
+            return json.loads(raw) if raw else None
+    except urllib.error.HTTPError as e:
+        raise HttpError(502, "Foto deposu hatasi %d: %s" % (e.code, e.read().decode("utf-8", "replace")[:200]))
+    except urllib.error.URLError as e:
+        raise HttpError(502, "Foto deposuna ulasilamadi: %s" % e.reason)
+
+
+def fatura_gerekli():
+    if not (SUPABASE_URL and SUPABASE_KEY):
+        raise HttpError(503, "Fatura fotograflari icin Supabase baglantisi gerekli")
+
+
+def fatura_liste(hepsi):
+    fatura_gerekli()
+    q = "?select=id,tarih,plaka,firma,kategori,tutar,belge_adi&order=tarih.desc,id.desc&limit=300"
+    if not hepsi:
+        q += "&belge_adi=is.null"
+    return sb_request("GET", "giderler", query=q) or []
+
+
+def fatura_kayit(gid):
+    rows = sb_request("GET", "giderler", query="?id=eq.%d&select=id,belge_adi" % gid)
+    if not rows:
+        raise HttpError(404, "Boyle bir gider kaydi yok")
+    return rows[0]
+
+
+def fatura_yukle(gid, foto):
+    fatura_gerekli()
+    if len(foto) < 1000 or foto[:3] != b"\xff\xd8\xff":
+        raise HttpError(400, "Dosya JPEG foto degil")
+    fatura_kayit(gid)
+    yol = "gider-%d.jpg" % gid
+    sb_storage("POST", "object/%s/%s" % (BUCKET, yol), foto, "image/jpeg")
+    sb_request("PATCH", "giderler", {"belge_adi": yol}, prefer="return=minimal", query="?id=eq.%d" % gid)
+    return {"ok": True, "belge_adi": yol}
+
+
+def fatura_url(gid):
+    fatura_gerekli()
+    yol = fatura_kayit(gid).get("belge_adi")
+    if not yol:
+        raise HttpError(404, "Bu kayda belge eklenmemis")
+    r = sb_storage("POST", "object/sign/%s/%s" % (BUCKET, yol), json.dumps({"expiresIn": 300}).encode())
+    return {"url": SUPABASE_URL + "/storage/v1" + r["signedURL"]}
+
+
 # ---------------------------------------------------------------- Kurallar
 def validate(data):
     if not isinstance(data, dict):
@@ -222,6 +285,18 @@ class Handler(http.server.SimpleHTTPRequestHandler):
                 return self._json(200, state)
             except HttpError as e:
                 return self._json(e.code, {"error": e.message})
+        m = FATURA_RE.match(path)
+        if m:
+            if not token_ok(self.headers):
+                return self._json(401, {"error": "Parola gerekli"})
+            try:
+                if m.group(1) == "liste":
+                    return self._json(200, fatura_liste("hepsi=1" in self.path))
+                if m.group(3):
+                    return self._json(200, fatura_url(int(m.group(2))))
+            except HttpError as e:
+                return self._json(e.code, {"error": e.message})
+            return self._json(404, {"error": "bulunamadi"})
         if path == "/":
             self.path = "/index.html"
             path = "/index.html"
@@ -230,6 +305,19 @@ class Handler(http.server.SimpleHTTPRequestHandler):
         return super().do_GET()
 
     def do_POST(self):
+        m = FATURA_RE.match(self.path.split("?")[0])
+        if m and m.group(2) and not m.group(3):
+            if not token_ok(self.headers):
+                return self._json(401, {"error": "Parola gerekli"})
+            try:
+                length = int(self.headers.get("Content-Length", "0"))
+                if length <= 0 or length > MAX_PHOTO:
+                    raise HttpError(413, "Foto boyutu gecersiz veya cok buyuk")
+                return self._json(200, fatura_yukle(int(m.group(2)), self.rfile.read(length)))
+            except HttpError as e:
+                return self._json(e.code, {"error": e.message})
+            except Exception as e:
+                return self._json(500, {"error": "Sunucu hatasi: %s" % type(e).__name__})
         if self.path.split("?")[0] != "/api/data":
             return self._json(404, {"error": "bulunamadi"})
         if not token_ok(self.headers):
